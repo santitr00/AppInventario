@@ -1,0 +1,88 @@
+{% extends "layouts/base.html" %}
+{% block title %}{% if item %}Editar{% else %}Nuevo{% endif %} Ítem{% endblock %}
+{% block page_title %}{% if item %}Editar Ítem{% else %}Nuevo Ítem{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<nav style="font-size:13px" class="mb-1">
+  <a href="{{ url_for('inventory.index') }}" class="text-decoration-none" style="color:#2E86C1">Inventario</a>
+  <span class="text-muted">›</span>
+  <span class="text-muted">{% if item %}Editar{% else %}Nuevo{% endif %}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="card-custom p-4" style="max-width:800px">
+  <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="row g-3">
+      <div class="col-md-8">
+        <label class="form-label fw-semibold" style="font-size:13px">Nombre *</label>
+        <input type="text" name="nombre" class="form-control" value="{{ item.nombre if item else '' }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold" style="font-size:13px">Categoría *</label>
+        <select name="categoria_id" class="form-select" required>
+          {% for cat in categorias %}
+          <option value="{{ cat.id }}" {% if item and item.categoria_id == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" style="font-size:13px">Ubicación</label>
+        <input type="text" name="ubicacion" class="form-control" value="{{ item.ubicacion if item else '' }}" placeholder="Ej: Depósito central">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold" style="font-size:13px">Estado</label>
+        <select name="estado" class="form-select">
+          {% for e in ['Operativo', 'Stock bajo', 'En reparación', 'Fuera de servicio', 'En préstamo', 'Revisar'] %}
+          <option {% if item and item.estado == e %}selected{% endif %}>{{ e }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label fw-semibold" style="font-size:13px">Cantidad</label>
+        <input type="number" name="cantidad" class="form-control" value="{{ item.cantidad if item else 1 }}" min="0">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label fw-semibold" style="font-size:13px">Stock Mínimo</label>
+        <input type="number" name="stock_minimo" class="form-control" value="{{ item.stock_minimo if item else 0 }}" min="0" title="Alerta cuando la cantidad cae por debajo de este valor">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold" style="font-size:13px">Marca</label>
+        <input type="text" name="marca" class="form-control" value="{{ item.marca if item else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold" style="font-size:13px">Modelo</label>
+        <input type="text" name="modelo" class="form-control" value="{{ item.modelo if item else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold" style="font-size:13px">Número de Serie</label>
+        <input type="text" name="numero_serie" class="form-control" value="{{ item.numero_serie if item else '' }}">
+      </div>
+      <div class="col-12">
+        <label class="form-label fw-semibold" style="font-size:13px">Descripción</label>
+        <textarea name="descripcion" class="form-control" rows="2">{{ item.descripcion if item else '' }}</textarea>
+      </div>
+      <div class="col-12">
+        <label class="form-label fw-semibold" style="font-size:13px">Notas</label>
+        <textarea name="notas" class="form-control" rows="2">{{ item.notas if item else '' }}</textarea>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" style="font-size:13px">Foto</label>
+        <input type="file" name="foto" class="form-control" accept="image/*">
+        {% if item and item.foto %}
+        <small class="text-muted">Foto actual: {{ item.foto }}</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-gltec">
+        <i class="bi bi-check-lg"></i> {% if item %}Guardar Cambios{% else %}Crear Ítem{% endif %}
+      </button>
+      <a href="{{ url_for('inventory.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

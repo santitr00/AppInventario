@@ -1,0 +1,150 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ item.nombre }}{% endblock %}
+
+{% block breadcrumb %}
+<nav style="font-size:13px" class="mb-1">
+  <a href="{{ url_for('inventory.index') }}" class="text-decoration-none" style="color:#2E86C1">Inventario</a>
+  <span class="text-muted">›</span>
+  {% if item.categoria %}
+  <span class="text-muted">{{ item.categoria.nombre }}</span>
+  <span class="text-muted">›</span>
+  {% endif %}
+  <span class="text-muted">{{ item.nombre }}</span>
+</nav>
+{% endblock %}
+
+{% block page_title %}{{ item.nombre }}{% endblock %}
+
+{% block content %}
+<!-- Action buttons -->
+<div class="d-flex gap-2 mb-4" style="margin-top:-12px">
+  {% if current_user.puede_editar() %}
+  <a href="{{ url_for('inventory.editar_item', item_id=item.id) }}" class="btn btn-sm btn-gltec"><i class="bi bi-pencil"></i> Editar</a>
+  <form method="POST" action="{{ url_for('inventory.baja_item', item_id=item.id) }}" class="d-inline" onsubmit="return confirm('¿Confirmar baja de este ítem?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Dar de Baja</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="row g-4">
+  <!-- Info general -->
+  <div class="col-md-6">
+    <div class="card-custom p-4">
+      <h6 class="mb-3 pb-2 border-bottom" style="color:#1B4F72">Información General</h6>
+      <div class="mb-3">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Nombre</div>
+        <div>{{ item.nombre }}</div>
+      </div>
+      <div class="mb-3">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Categoría</div>
+        <div>
+          {% if item.categoria %}
+          <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600">{{ item.categoria.nombre }}</span>
+          {% endif %}
+        </div>
+      </div>
+      {% if item.marca or item.modelo %}
+      <div class="mb-3">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Marca / Modelo</div>
+        <div>{{ item.marca }} {{ item.modelo }}</div>
+      </div>
+      {% endif %}
+      {% if item.numero_serie %}
+      <div class="mb-3">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Número de Serie</div>
+        <div>{{ item.numero_serie }}</div>
+      </div>
+      {% endif %}
+      <div class="mb-3">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Estado</div>
+        <div>
+          {% set estado_lower = item.estado|lower %}
+          {% if 'operat' in estado_lower %}
+            <span class="badge-estado badge-operativo">{{ item.estado }}</span>
+          {% elif 'bajo' in estado_lower %}
+            <span class="badge-estado badge-stock-bajo">{{ item.estado }}</span>
+          {% elif 'reparac' in estado_lower %}
+            <span class="badge-estado badge-reparacion">{{ item.estado }}</span>
+          {% else %}
+            <span class="badge-estado badge-default">{{ item.estado }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="mb-3">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Cantidad</div>
+        <div class="d-flex align-items-center gap-2">
+          {{ item.cantidad }}
+          {% if item.stock_minimo > 0 %}
+            {% if item.cantidad <= item.stock_minimo %}
+            <span class="badge-estado badge-stock-bajo"><i class="bi bi-exclamation-triangle-fill me-1"></i>Stock bajo (mín. {{ item.stock_minimo }})</span>
+            {% else %}
+            <span class="text-muted" style="font-size:11.5px">mín. {{ item.stock_minimo }}</span>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+      {% if item.descripcion %}
+      <div class="mb-0">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Descripción</div>
+        <div>{{ item.descripcion }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Foto + ubicación -->
+  <div class="col-md-6">
+    <div class="card-custom p-4">
+      <h6 class="mb-3 pb-2 border-bottom" style="color:#1B4F72">Foto del Ítem</h6>
+      {% if item.foto %}
+      <img src="{{ url_for('static', filename='uploads/' + item.foto) }}" class="img-fluid rounded mb-3" style="max-height:200px;object-fit:cover;width:100%">
+      {% else %}
+      <div class="d-flex align-items-center justify-content-center rounded mb-3" style="height:180px;background:linear-gradient(135deg,#e8f0fe,#d6eaf8);font-size:40px;color:#1B4F72">
+        <i class="bi bi-camera"></i>
+      </div>
+      {% endif %}
+      <div class="mb-3">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Ubicación</div>
+        <div>{{ item.ubicacion or '-' }}</div>
+      </div>
+      {% if item.fecha_ingreso %}
+      <div class="mb-3">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Fecha de Ingreso</div>
+        <div>{{ item.fecha_ingreso.strftime('%d/%m/%Y') }}</div>
+      </div>
+      {% endif %}
+      {% if item.notas %}
+      <div class="mb-0">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Notas</div>
+        <div>{{ item.notas }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Historial -->
+  <div class="col-12">
+    <div class="card-custom p-4">
+      <h6 class="mb-3 pb-2 border-bottom" style="color:#1B4F72">Historial de Cambios</h6>
+      {% if historial %}
+      {% for h in historial %}
+      <div class="d-flex gap-3 py-2 {% if not loop.last %}border-bottom{% endif %}" style="align-items:flex-start">
+        <div class="rounded-circle flex-shrink-0 mt-1" style="width:8px;height:8px;background:{% if h.accion == 'alta' %}#2E86C1{% elif h.accion == 'edicion' %}#f39c12{% elif h.accion == 'baja' %}#c0392b{% elif h.accion == 'cambio_estado' %}#27ae60{% else %}#8e44ad{% endif %}"></div>
+        <div>
+          <div style="font-size:13px;color:#555">
+            <strong style="color:#333">{{ h.accion|capitalize }}</strong>
+            — {{ h.detalle or '' }}
+            {% if h.user %}<span class="text-muted">por {{ h.user.nombre_completo or h.user.username }}</span>{% endif %}
+          </div>
+          <div style="font-size:11px;color:#aaa">{{ h.created_at.strftime('%d/%m/%Y • %H:%M') }}</div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="text-muted mb-0" style="font-size:13px">Sin registros de cambios.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends "layouts/base.html" %}
+{% block title %}Búsqueda{% endblock %}
+{% block page_title %}Búsqueda de Inventario{% endblock %}
+
+{% block content %}
+<!-- Search box -->
+<div class="card-custom p-4 mb-4">
+  <form method="GET" action="{{ url_for('search.buscar') }}">
+    <div class="d-flex gap-2 mb-3">
+      <div class="flex-grow-1 position-relative">
+        <i class="bi bi-search position-absolute" style="left:14px;top:12px;color:#999"></i>
+        <input type="text" name="q" class="form-control" style="padding-left:40px" value="{{ q }}" placeholder="Buscar por nombre, marca, modelo, ubicación...">
+      </div>
+      <button type="submit" class="btn btn-gltec px-4">Buscar</button>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <select name="categoria_id" class="form-select form-select-sm" style="max-width:200px">
+        <option value="">Todas las categorías</option>
+        {% for cat in categorias %}
+        <option value="{{ cat.id }}" {% if categoria_id == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
+        {% endfor %}
+      </select>
+      <select name="estado" class="form-select form-select-sm" style="max-width:200px">
+        <option value="">Todos los estados</option>
+        {% for e in estados %}
+        <option {% if estado_sel == e %}selected{% endif %}>{{ e }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="ubicacion" class="form-control form-control-sm" style="max-width:200px" value="{{ ubicacion }}" placeholder="Ubicación...">
+    </div>
+  </form>
+</div>
+
+<!-- Results info -->
+{% if q or categoria_id or estado_sel or ubicacion %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <span style="font-size:13.5px" class="text-muted">
+    Se encontraron <strong style="color:#1B4F72">{{ pagination.total }}</strong> resultados
+    {% if q %}para "<strong style="color:#1B4F72">{{ q }}</strong>"{% endif %}
+  </span>
+  <div class="d-flex gap-2 align-items-center">
+    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, format='csv') }}" class="btn btn-sm btn-outline-secondary" title="Exportar a CSV">
+      <i class="bi bi-download"></i> CSV
+    </a>
+    {% if q %}<span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">{{ q }} <a href="{{ url_for('search.buscar', categoria_id=categoria_id, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a></span>{% endif %}
+    {% if categoria_id %}
+    {% for cat in categorias if cat.id == categoria_id %}
+    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">{{ cat.nombre }} <a href="{{ url_for('search.buscar', q=q, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a></span>
+    {% endfor %}
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Results table -->
+<div class="table-container">
+  {% if items %}
+  <div class="d-flex justify-content-end p-2 border-bottom">
+    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, format='csv') }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-download"></i> Exportar CSV
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-borderless mb-0">
+      <thead>
+        <tr>
+          <th>Ítem</th>
+          <th>Categoría</th>
+          <th>Ubicación</th>
+          <th>Estado</th>
+          <th>Cantidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr style="cursor:pointer" onclick="window.location='{{ url_for('inventory.ver_item', item_id=item.id) }}'">
+          <td>
+            <strong>{{ item.nombre }}</strong>
+            {% if item.marca or item.modelo %}
+            <br><span class="text-muted" style="font-size:11.5px">{{ item.marca }} {{ item.modelo }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.categoria %}
+            <span class="cat-dot" style="background:{{ item.categoria.color }}"></span>{{ item.categoria.nombre }}
+            {% endif %}
+          </td>
+          <td>{{ item.ubicacion or '-' }}</td>
+          <td>
+            {% set estado_lower = item.estado|lower|replace(' ', '-') %}
+            {% if 'operat' in estado_lower %}
+              <span class="badge-estado badge-operativo">{{ item.estado }}</span>
+            {% elif 'bajo' in estado_lower %}
+              <span class="badge-estado badge-stock-bajo">{{ item.estado }}</span>
+            {% elif 'reparac' in estado_lower %}
+              <span class="badge-estado badge-reparacion">{{ item.estado }}</span>
+            {% elif 'fuera' in estado_lower %}
+              <span class="badge-estado badge-fuera">{{ item.estado }}</span>
+            {% else %}
+              <span class="badge-estado badge-default">{{ item.estado }}</span>
+            {% endif %}
+          </td>
+          <td>{{ item.cantidad }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if pagination.pages > 1 %}
+  <div class="d-flex justify-content-center gap-1 p-3">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, page=pagination.prev_num) }}" class="btn btn-sm btn-outline-secondary">‹</a>
+    {% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+      {% if p %}
+        <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, page=p) }}"
+           class="btn btn-sm {% if p == pagination.page %}btn-gltec{% else %}btn-outline-secondary{% endif %}">{{ p }}</a>
+      {% else %}
+        <span class="btn btn-sm disabled">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, page=pagination.next_num) }}" class="btn btn-sm btn-outline-secondary">›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="text-center text-muted py-5">
+    <i class="bi bi-search" style="font-size:40px"></i>
+    <p class="mt-2">
+      {% if q or categoria_id or estado_sel %}
+      No se encontraron resultados con esos filtros.
+      {% else %}
+      Usá el buscador para encontrar ítems del inventario.
+      {% endif %}
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

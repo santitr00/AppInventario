@@ -1,0 +1,111 @@
+{% extends "layouts/base.html" %}
+{% block title %}Inventario{% endblock %}
+{% block page_title %}Inventario{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-label">Total de Ítems</div>
+      <div class="stat-value">{{ total }}</div>
+      <div class="text-muted" style="font-size:11.5px">en todas las categorías</div>
+    </div>
+  </div>
+  {% for s in stats_por_cat[:3] %}
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-label">{{ s.categoria.nombre }}</div>
+      <div class="stat-value">{{ s.count }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Table -->
+<div class="table-container">
+  <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+    <h5 class="mb-0" style="font-size:16px">Últimos movimientos</h5>
+    {% if current_user.puede_editar() %}
+    <a href="{{ url_for('inventory.crear_item') }}" class="btn btn-sm btn-gltec">
+      <i class="bi bi-plus-lg"></i> Nuevo Ítem
+    </a>
+    {% endif %}
+  </div>
+
+  {% if items %}
+  <div class="table-responsive">
+    <table class="table table-borderless mb-0">
+      <thead>
+        <tr>
+          <th>Ítem</th>
+          <th>Categoría</th>
+          <th>Ubicación</th>
+          <th>Estado</th>
+          <th>Cantidad</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>
+            <strong>{{ item.nombre }}</strong>
+            {% if item.marca or item.modelo %}
+            <br><span class="text-muted" style="font-size:11.5px">{{ item.marca }} {{ item.modelo }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.categoria %}
+            <span class="cat-dot" style="background:{{ item.categoria.color }}"></span>{{ item.categoria.nombre }}
+            {% endif %}
+          </td>
+          <td>{{ item.ubicacion or '-' }}</td>
+          <td>
+            {% set estado_lower = item.estado|lower|replace(' ', '-') %}
+            {% if 'operat' in estado_lower %}
+              <span class="badge-estado badge-operativo">{{ item.estado }}</span>
+            {% elif 'bajo' in estado_lower %}
+              <span class="badge-estado badge-stock-bajo">{{ item.estado }}</span>
+            {% elif 'reparac' in estado_lower %}
+              <span class="badge-estado badge-reparacion">{{ item.estado }}</span>
+            {% elif 'préstamo' in estado_lower or 'prestamo' in estado_lower %}
+              <span class="badge-estado badge-prestamo">{{ item.estado }}</span>
+            {% elif 'fuera' in estado_lower %}
+              <span class="badge-estado badge-fuera">{{ item.estado }}</span>
+            {% elif 'revisar' in estado_lower %}
+              <span class="badge-estado badge-revisar">{{ item.estado }}</span>
+            {% else %}
+              <span class="badge-estado badge-default">{{ item.estado }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {{ item.cantidad }}
+            {% if item.stock_minimo > 0 and item.cantidad <= item.stock_minimo %}
+            <span class="badge-estado badge-stock-bajo ms-1" title="Stock bajo el mínimo ({{ item.stock_minimo }})"><i class="bi bi-exclamation-triangle-fill"></i></span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              {% if current_user.puede_editar() %}
+              <a href="{{ url_for('inventory.editar_item', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+              {% endif %}
+              <a href="{{ url_for('inventory.ver_item', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary" title="Ver detalle"><i class="bi bi-eye"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center text-muted py-5">
+    <i class="bi bi-inbox" style="font-size:40px"></i>
+    <p class="mt-2">No hay ítems cargados todavía.</p>
+    {% if current_user.puede_editar() %}
+    <a href="{{ url_for('inventory.crear_item') }}" class="btn btn-gltec btn-sm mt-2">Cargar el primero</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

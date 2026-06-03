@@ -1,0 +1,27 @@
+{% extends "layouts/base.html" %}
+{% block title %}Barrios{% endblock %}
+{% block page_title %}Barrios{% endblock %}
+
+{% block content %}
+<div class="table-container">
+  <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+    <h5 class="mb-0" style="font-size:16px">Gestión de Barrios</h5>
+    <a href="{{ url_for('admin.crear_barrio') }}" class="btn btn-sm btn-gltec"><i class="bi bi-plus-lg"></i> Nuevo Barrio</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-borderless mb-0">
+      <thead><tr><th>Nombre</th><th>Dirección</th><th>Usuarios</th><th>Ítems</th></tr></thead>
+      <tbody>
+        {% for b in barrios %}
+        <tr>
+          <td><strong>{{ b.nombre }}</strong></td>
+          <td>{{ b.direccion or '-' }}</td>
+          <td>{{ b.usuarios.count() }}</td>
+          <td>{{ b.items.filter_by(activo=True).count() }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

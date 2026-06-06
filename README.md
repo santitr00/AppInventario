@@ -2,27 +2,7 @@
 
 Plataforma web de gestión de inventario multi-barrio desarrollada con Flask + MySQL.
 
-## Setup rápido
-
-```bash
-# 1. Crear base de datos MySQL
-mysql -u root -e "CREATE DATABASE inventario_barrios CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-
-# 2. Configurar
-cp .env.example .env
-# Editar .env con tus credenciales de MySQL
-
-# 3. Instalar dependencias
-pip install -r requirements.txt
-
-# 4. Crear tablas y datos iniciales
-python scripts/seed.py
-
-# 5. Ejecutar
-python run.py
-```
-
-Acceder a http://localhost:5000 — Login: `admin` / `admin2026`
+<img width="1917" height="904" alt="image" src="https://github.com/user-attachments/assets/42d8a286-4aec-4a23-9e66-7501c3a17975" />
 
 ## Importar datos desde Excel
 

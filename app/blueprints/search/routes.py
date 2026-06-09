@@ -17,6 +17,8 @@ def buscar():
     ubicacion = request.args.get("ubicacion", "").strip()
     page = request.args.get("page", 1, type=int)
 
+    categoria_sel = db.session.get(Categoria, categoria_id) if categoria_id else None
+
     query = Item.query.filter_by(activo=True)
 
     # Filtro por barrio
@@ -86,6 +88,7 @@ def buscar():
         estados=estados,
         q=q,
         categoria_id=categoria_id,
+        categoria_sel=categoria_sel,
         estado_sel=estado,
         ubicacion=ubicacion,
     )

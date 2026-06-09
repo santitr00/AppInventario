@@ -3,94 +3,235 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iniciar Sesión | GLTEC Inventario</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>GLTEC Inventario</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: 'DM Sans', sans-serif;
-      background: linear-gradient(135deg, #0f2027 0%, #1a3a4a 40%, #2c5364 100%);
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0d1117;
       padding: 20px;
     }
-    .login-container {
-      display: flex; width: 860px; min-height: 480px;
-      background: #fff; border-radius: 20px; overflow: hidden;
-      box-shadow: 0 30px 60px rgba(0,0,0,.3);
+
+    /* Fondo con patrón sutil */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(46, 134, 193, 0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 80% 110%, rgba(27, 79, 114, 0.2) 0%, transparent 60%);
+      pointer-events: none;
     }
-    .login-left {
-      flex: 1; background: linear-gradient(160deg, #1B4F72 0%, #2E86C1 100%);
-      padding: 48px 40px; display: flex; flex-direction: column; justify-content: center;
-      position: relative; overflow: hidden;
+
+    .card {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 16px;
+      padding: 44px 40px 40px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,.03);
     }
-    .login-left::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,.06); }
-    .login-left::after { content:''; position:absolute; bottom:-40px; left:-40px; width:160px; height:160px; border-radius:50%; background:rgba(255,255,255,.04); }
-    .login-left h1 { color: #fff; font-size: 32px; font-weight: 700; margin-bottom: 8px; }
-    .login-left .subtitle { color: rgba(255,255,255,.7); font-size: 15px; margin-bottom: 36px; }
-    .feature-item { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; color: rgba(255,255,255,.85); font-size: 14px; }
-    .feature-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-    .login-right { flex: 1; padding: 48px 44px; display: flex; flex-direction: column; justify-content: center; }
-    .login-right .logo { font-size: 22px; font-weight: 700; color: #1B4F72; }
-    .login-right .logo span { color: #2E86C1; font-weight: 400; font-size: 13px; display: block; margin-top: 2px; }
-    .login-right h2 { font-size: 24px; font-weight: 600; color: #1a1a2e; margin-top: 28px; margin-bottom: 6px; }
-    .login-right .desc { color: #7a7a8e; font-size: 13.5px; margin-bottom: 28px; }
-    .form-group { margin-bottom: 18px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #3a3a4e; margin-bottom: 6px; }
+
+    /* Línea de acento superior */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20px; right: 20px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #2E86C1 40%, #58aedd 60%, transparent);
+      border-radius: 0 0 4px 4px;
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, #1B4F72, #2E86C1);
+      border-radius: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 24px rgba(46, 134, 193, 0.3);
+    }
+
+    .brand-logo svg {
+      width: 26px;
+      height: 26px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .brand-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #e6edf3;
+      letter-spacing: -.3px;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: #4d7a9e;
+      font-weight: 500;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #8b949e;
+      margin-bottom: 7px;
+      letter-spacing: .2px;
+      text-transform: uppercase;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-wrap svg {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: #4d7a9e;
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+
     .form-group input {
-      width: 100%; padding: 12px 14px; border: 1.5px solid #e0e0ea; border-radius: 10px;
-      font-size: 14px; font-family: 'DM Sans', sans-serif; color: #333; background: #fafafc;
+      width: 100%;
+      padding: 11px 14px 11px 38px;
+      background: #0d1117;
+      border: 1.5px solid #21262d;
+      border-radius: 9px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      color: #e6edf3;
+      transition: border-color .15s, box-shadow .15s;
     }
-    .form-group input:focus { outline: none; border-color: #2E86C1; background: #fff; }
+
+    .form-group input::placeholder { color: #3d444d; }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #2E86C1;
+      box-shadow: 0 0 0 3px rgba(46, 134, 193, .15);
+    }
+
     .btn-login {
-      width: 100%; padding: 13px; background: linear-gradient(135deg, #1B4F72, #2E86C1);
-      color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
-      font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 6px;
+      width: 100%;
+      padding: 12px;
+      background: #2E86C1;
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      margin-top: 8px;
+      letter-spacing: .2px;
+      transition: background .15s, transform .1s, box-shadow .15s;
+      box-shadow: 0 4px 16px rgba(46, 134, 193, .25);
     }
-    .btn-login:hover { opacity: .9; }
-    .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
-    .alert-danger { background: #fde8e8; color: #c0392b; }
-    .alert-warning { background: #fff8e1; color: #b8860b; }
-    @media (max-width: 700px) {
-      .login-container { flex-direction: column; width: 100%; }
-      .login-left { padding: 30px 24px; }
-      .login-right { padding: 30px 24px; }
+
+    .btn-login:hover {
+      background: #2478b0;
+      box-shadow: 0 6px 20px rgba(46, 134, 193, .35);
+    }
+
+    .btn-login:active { transform: translateY(1px); }
+
+    .alert {
+      padding: 10px 13px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert-danger  { background: rgba(218, 54, 51, .12); color: #f97171; border: 1px solid rgba(218,54,51,.2); }
+    .alert-warning { background: rgba(210, 153, 34, .12); color: #e3b341; border: 1px solid rgba(210,153,34,.2); }
+    .alert-success { background: rgba(46, 160, 67, .12);  color: #56d364; border: 1px solid rgba(46,160,67,.2);  }
+
+    @media (max-width: 460px) {
+      .card { padding: 36px 24px 32px; }
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
-    <div class="login-left">
-      <h1>Inventario</h1>
-      <div class="subtitle">Sistema de gestión para tu barrio</div>
-      <div class="feature-item"><div class="feature-icon">📋</div><span>Control total de equipos y materiales</span></div>
-      <div class="feature-item"><div class="feature-icon">🔍</div><span>Búsqueda rápida por cualquier criterio</span></div>
-      <div class="feature-item"><div class="feature-icon">📱</div><span>Accesible desde cualquier dispositivo</span></div>
-      <div class="feature-item"><div class="feature-icon">🔐</div><span>Acceso seguro con roles diferenciados</span></div>
+  <div class="card">
+    <div class="brand">
+      <div class="brand-logo">
+        <!-- ícono de inventario/caja -->
+        <svg viewBox="0 0 24 24">
+          <path d="M21 8v13H3V8"/>
+          <path d="M1 3h22v5H1z"/>
+          <path d="M10 12h4"/>
+        </svg>
+      </div>
+      <div class="brand-name">GLTEC Inventario</div>
+      <div class="brand-sub">Gestión de barrios</div>
     </div>
-    <div class="login-right">
-      <div class="logo">GLTEC <span>Tecnología sin Límites</span></div>
-      <h2>Iniciar Sesión</h2>
-      <div class="desc">Ingresá tus credenciales para acceder al sistema</div>
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for cat, msg in messages %}
-      <div class="alert alert-{{ cat }}">{{ msg }}</div>
-      {% endfor %}
-      {% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+    {% endwith %}
 
-      <form method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form-group">
-          <label>Usuario</label>
-          <input type="text" name="username" placeholder="tu.usuario" required autofocus>
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label>Usuario</label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input type="text" name="username" placeholder="tu.usuario" required autofocus autocomplete="username">
         </div>
-        <div class="form-group">
-          <label>Contraseña</label>
-          <input type="password" name="password" placeholder="••••••••" required>
+      </div>
+
+      <div class="form-group">
+        <label>Contraseña</label>
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input type="password" name="password" placeholder="••••••••" required autocomplete="current-password">
         </div>
-        <button type="submit" class="btn-login">Ingresar</button>
-      </form>
-    </div>
+      </div>
+
+      <button type="submit" class="btn-login">Ingresar</button>
+    </form>
   </div>
 </body>
 </html>

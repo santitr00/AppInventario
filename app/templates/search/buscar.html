@@ -1,6 +1,6 @@
 {% extends "layouts/base.html" %}
-{% block title %}Búsqueda{% endblock %}
-{% block page_title %}Búsqueda de Inventario{% endblock %}
+{% block title %}{% if categoria_sel %}{{ categoria_sel.nombre }}{% else %}Búsqueda{% endif %}{% endblock %}
+{% block page_title %}{% if categoria_sel %}{{ categoria_sel.nombre }}{% else %}Búsqueda de Inventario{% endif %}{% endblock %}
 
 {% block content %}
 <!-- Search box -->
@@ -9,7 +9,7 @@
     <div class="d-flex gap-2 mb-3">
       <div class="flex-grow-1 position-relative">
         <i class="bi bi-search position-absolute" style="left:14px;top:12px;color:#999"></i>
-        <input type="text" name="q" class="form-control" style="padding-left:40px" value="{{ q }}" placeholder="Buscar por nombre, marca, modelo, ubicación...">
+        <input type="text" name="q" class="form-control" style="padding-left:40px" value="{{ q }}" placeholder="Buscar por nombre, marca, modelo, número de serie...">
       </div>
       <button type="submit" class="btn btn-gltec px-4">Buscar</button>
     </div>
@@ -33,20 +33,38 @@
 
 <!-- Results info -->
 {% if q or categoria_id or estado_sel or ubicacion %}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
   <span style="font-size:13.5px" class="text-muted">
-    Se encontraron <strong style="color:#1B4F72">{{ pagination.total }}</strong> resultados
+    Se encontraron <strong style="color:#1B4F72">{{ pagination.total }}</strong> resultado{{ 's' if pagination.total != 1 }}
     {% if q %}para "<strong style="color:#1B4F72">{{ q }}</strong>"{% endif %}
   </span>
-  <div class="d-flex gap-2 align-items-center">
+  <div class="d-flex gap-2 align-items-center flex-wrap">
     <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, format='csv') }}" class="btn btn-sm btn-outline-secondary" title="Exportar a CSV">
       <i class="bi bi-download"></i> CSV
     </a>
-    {% if q %}<span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">{{ q }} <a href="{{ url_for('search.buscar', categoria_id=categoria_id, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a></span>{% endif %}
-    {% if categoria_id %}
-    {% for cat in categorias if cat.id == categoria_id %}
-    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">{{ cat.nombre }} <a href="{{ url_for('search.buscar', q=q, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a></span>
-    {% endfor %}
+    {% if q %}
+    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+      {{ q }}
+      <a href="{{ url_for('search.buscar', categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+    </span>
+    {% endif %}
+    {% if categoria_id and categoria_sel %}
+    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+      <span class="cat-dot" style="background:{{ categoria_sel.color }}"></span>{{ categoria_sel.nombre }}
+      <a href="{{ url_for('search.buscar', q=q, estado=estado_sel, ubicacion=ubicacion) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+    </span>
+    {% endif %}
+    {% if estado_sel %}
+    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+      {{ estado_sel }}
+      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, ubicacion=ubicacion) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+    </span>
+    {% endif %}
+    {% if ubicacion %}
+    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+      <i class="bi bi-geo-alt" style="font-size:10px"></i> {{ ubicacion }}
+      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+    </span>
     {% endif %}
   </div>
 </div>
@@ -69,11 +87,12 @@
           <th>Ubicación</th>
           <th>Estado</th>
           <th>Cantidad</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for item in items %}
-        <tr style="cursor:pointer" onclick="window.location='{{ url_for('inventory.ver_item', item_id=item.id) }}'">
+        <tr>
           <td>
             <strong>{{ item.nombre }}</strong>
             {% if item.marca or item.modelo %}
@@ -94,13 +113,30 @@
               <span class="badge-estado badge-stock-bajo">{{ item.estado }}</span>
             {% elif 'reparac' in estado_lower %}
               <span class="badge-estado badge-reparacion">{{ item.estado }}</span>
+            {% elif 'préstamo' in estado_lower or 'prestamo' in estado_lower %}
+              <span class="badge-estado badge-prestamo">{{ item.estado }}</span>
             {% elif 'fuera' in estado_lower %}
               <span class="badge-estado badge-fuera">{{ item.estado }}</span>
+            {% elif 'revisar' in estado_lower %}
+              <span class="badge-estado badge-revisar">{{ item.estado }}</span>
             {% else %}
               <span class="badge-estado badge-default">{{ item.estado }}</span>
             {% endif %}
           </td>
-          <td>{{ item.cantidad }}</td>
+          <td>
+            {{ item.cantidad }}
+            {% if item.stock_minimo > 0 and item.cantidad <= item.stock_minimo %}
+            <span class="badge-estado badge-stock-bajo ms-1" title="Stock bajo el mínimo ({{ item.stock_minimo }})"><i class="bi bi-exclamation-triangle-fill"></i></span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              {% if current_user.puede_editar() %}
+              <a href="{{ url_for('inventory.editar_item', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+              {% endif %}
+              <a href="{{ url_for('inventory.ver_item', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary" title="Ver detalle"><i class="bi bi-eye"></i></a>
+            </div>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -131,7 +167,7 @@
   <div class="text-center text-muted py-5">
     <i class="bi bi-search" style="font-size:40px"></i>
     <p class="mt-2">
-      {% if q or categoria_id or estado_sel %}
+      {% if q or categoria_id or estado_sel or ubicacion %}
       No se encontraron resultados con esos filtros.
       {% else %}
       Usá el buscador para encontrar ítems del inventario.

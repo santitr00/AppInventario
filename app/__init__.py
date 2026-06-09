@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import timezone, timedelta
 from logging.handlers import RotatingFileHandler
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -73,6 +74,18 @@ def create_app():
     app.register_blueprint(inventory_bp)
     app.register_blueprint(search_bp)
     app.register_blueprint(admin_bp)
+
+    # ── Template filters ──
+    _ART = timezone(timedelta(hours=-3))
+
+    @app.template_filter("art")
+    def art_filter(dt):
+        """Convierte un datetime UTC (naive o aware) a hora Argentina (UTC-3)."""
+        if dt is None:
+            return ""
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(_ART).strftime("%d/%m/%Y • %H:%M")
 
     # ── Context processors ──
     @app.context_processor

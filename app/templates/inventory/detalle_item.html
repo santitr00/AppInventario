@@ -137,7 +137,7 @@
             — {{ h.detalle or '' }}
             {% if h.user %}<span class="text-muted">por {{ h.user.nombre_completo or h.user.username }}</span>{% endif %}
           </div>
-          <div style="font-size:11px;color:#aaa">{{ h.created_at.strftime('%d/%m/%Y • %H:%M') }}</div>
+          <div style="font-size:11px;color:#aaa">{{ h.created_at | art }}</div>
         </div>
       </div>
       {% endfor %}

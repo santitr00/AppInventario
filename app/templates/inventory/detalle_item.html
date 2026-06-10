@@ -32,6 +32,13 @@
   <div class="col-md-6">
     <div class="card-custom p-4">
       <h6 class="mb-3 pb-2 border-bottom" style="color:#1B4F72">Información General</h6>
+      {% if item.codigo %}
+      <div class="mb-3">
+        <span class="badge rounded-pill px-3 py-2" style="background:#1B4F72;color:#fff;font-size:14px;font-weight:700;letter-spacing:.5px">
+          <i class="bi bi-tag-fill me-1"></i>{{ item.codigo }}
+        </span>
+      </div>
+      {% endif %}
       <div class="mb-3">
         <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Nombre</div>
         <div>{{ item.nombre }}</div>
@@ -73,16 +80,7 @@
       </div>
       <div class="mb-3">
         <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Cantidad</div>
-        <div class="d-flex align-items-center gap-2">
-          {{ item.cantidad }}
-          {% if item.stock_minimo > 0 %}
-            {% if item.cantidad <= item.stock_minimo %}
-            <span class="badge-estado badge-stock-bajo"><i class="bi bi-exclamation-triangle-fill me-1"></i>Stock bajo (mín. {{ item.stock_minimo }})</span>
-            {% else %}
-            <span class="text-muted" style="font-size:11.5px">mín. {{ item.stock_minimo }}</span>
-            {% endif %}
-          {% endif %}
-        </div>
+        <div>{{ item.cantidad }}</div>
       </div>
       {% if item.descripcion %}
       <div class="mb-0">
@@ -115,9 +113,17 @@
       </div>
       {% endif %}
       {% if item.notas %}
-      <div class="mb-0">
+      <div class="mb-3">
         <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Notas</div>
         <div>{{ item.notas }}</div>
+      </div>
+      {% endif %}
+      {% if item.pdf %}
+      <div class="mb-0">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Documentación</div>
+        <a href="{{ url_for('static', filename='uploads/' + item.pdf) }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1">
+          <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>Abrir PDF
+        </a>
       </div>
       {% endif %}
     </div>

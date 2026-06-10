@@ -28,7 +28,11 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold" style="font-size:13px">Código</label>
+        <input type="text" name="codigo" class="form-control" value="{{ item.codigo if item and item.codigo else '' }}" placeholder="Ej: CAM-001">
+      </div>
+      <div class="col-md-5">
         <label class="form-label fw-semibold" style="font-size:13px">Ubicación</label>
         <input type="text" name="ubicacion" class="form-control" value="{{ item.ubicacion if item else '' }}" placeholder="Ej: Depósito central">
       </div>
@@ -40,13 +44,9 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-2">
+      <div class="col-md-1">
         <label class="form-label fw-semibold" style="font-size:13px">Cantidad</label>
         <input type="number" name="cantidad" class="form-control" value="{{ item.cantidad if item else 1 }}" min="0">
-      </div>
-      <div class="col-md-2">
-        <label class="form-label fw-semibold" style="font-size:13px">Stock Mínimo</label>
-        <input type="number" name="stock_minimo" class="form-control" value="{{ item.stock_minimo if item else 0 }}" min="0" title="Alerta cuando la cantidad cae por debajo de este valor">
       </div>
       <div class="col-md-4">
         <label class="form-label fw-semibold" style="font-size:13px">Marca</label>
@@ -73,6 +73,13 @@
         <input type="file" name="foto" class="form-control" accept="image/*">
         {% if item and item.foto %}
         <small class="text-muted">Foto actual: {{ item.foto }}</small>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" style="font-size:13px">PDF adjunto <span class="text-muted fw-normal">(manual, ficha técnica, garantía)</span></label>
+        <input type="file" name="pdf" class="form-control" accept=".pdf">
+        {% if item and item.pdf %}
+        <small class="text-muted">PDF actual: {{ item.pdf }} — <a href="{{ url_for('static', filename='uploads/' + item.pdf) }}" target="_blank">abrir</a></small>
         {% endif %}
       </div>
     </div>

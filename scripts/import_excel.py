@@ -33,6 +33,7 @@ def importar(archivo, barrio_id, user_id=1):
 
     # Mapeo de columnas
     col_nombre = col_idx("nombre")
+    col_codigo = col_idx("codigo")
     col_cat = col_idx("categor")
     col_ubic = col_idx("ubica")
     col_desc = col_idx("descrip")
@@ -71,6 +72,7 @@ def importar(archivo, barrio_id, user_id=1):
 
         item = Item(
             nombre=str(nombre).strip(),
+            codigo=str(vals[col_codigo]).strip() if col_codigo is not None and vals[col_codigo] else None,
             descripcion=str(vals[col_desc]).strip() if col_desc and vals[col_desc] else "",
             categoria_id=cat_id,
             barrio_id=barrio_id,

@@ -81,13 +81,14 @@ class Item(db.Model):
     ubicacion = db.Column(db.String(200))
     estado = db.Column(db.String(50), default="Operativo")
     # Estados sugeridos: Operativo, Stock bajo, En reparación, Fuera de servicio, En préstamo
+    codigo = db.Column(db.String(50))
     cantidad = db.Column(db.Integer, default=1)
-    stock_minimo = db.Column(db.Integer, default=0)
     marca = db.Column(db.String(100))
     modelo = db.Column(db.String(100))
     numero_serie = db.Column(db.String(100))
     fecha_ingreso = db.Column(db.Date)
-    foto = db.Column(db.String(255))  # path relativo en static/uploads
+    foto = db.Column(db.String(255))
+    pdf = db.Column(db.String(255))
     notas = db.Column(db.Text)
     activo = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

@@ -9,10 +9,15 @@ from app import db
 inventory_bp = Blueprint("inventory", __name__, template_folder="../../templates/inventory")
 
 ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
+ALLOWED_PDF = {"pdf"}
 
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
+
+
+def allowed_pdf(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_PDF
 
 
 def get_user_barrio_id():
@@ -87,13 +92,13 @@ def crear_item():
     if request.method == "POST":
         item = Item(
             nombre=request.form["nombre"],
+            codigo=request.form.get("codigo", "").strip() or None,
             descripcion=request.form.get("descripcion", ""),
             categoria_id=int(request.form["categoria_id"]),
             barrio_id=barrio_id,
             ubicacion=request.form.get("ubicacion", ""),
             estado=request.form.get("estado", "Operativo"),
             cantidad=int(request.form.get("cantidad", 1)),
-            stock_minimo=int(request.form.get("stock_minimo", 0)),
             marca=request.form.get("marca", ""),
             modelo=request.form.get("modelo", ""),
             numero_serie=request.form.get("numero_serie", ""),
@@ -109,6 +114,14 @@ def crear_item():
                 filename = secure_filename(f"{barrio_id}_{file.filename}")
                 file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], filename))
                 item.foto = filename
+
+        # PDF
+        if "pdf" in request.files:
+            pfile = request.files["pdf"]
+            if pfile and pfile.filename and allowed_pdf(pfile.filename):
+                pfilename = secure_filename(f"pdf_{barrio_id}_{pfile.filename}")
+                pfile.save(os.path.join(current_app.config["UPLOAD_FOLDER"], pfilename))
+                item.pdf = pfilename
 
         db.session.add(item)
         db.session.flush()
@@ -161,22 +174,17 @@ def editar_item(item_id):
 
     if request.method == "POST":
         cambios = []
-        for campo in ["nombre", "descripcion", "ubicacion", "estado", "marca", "modelo", "numero_serie", "notas"]:
-            nuevo = request.form.get(campo, "")
+        for campo in ["nombre", "codigo", "descripcion", "ubicacion", "estado", "marca", "modelo", "numero_serie", "notas"]:
+            nuevo = request.form.get(campo, "").strip()
             viejo = getattr(item, campo) or ""
             if nuevo != viejo:
                 cambios.append(f"{campo}: '{viejo}' → '{nuevo}'")
-                setattr(item, campo, nuevo)
+                setattr(item, campo, nuevo or None if campo == "codigo" else nuevo)
 
         nueva_cant = int(request.form.get("cantidad", item.cantidad))
         if nueva_cant != item.cantidad:
             cambios.append(f"cantidad: {item.cantidad} → {nueva_cant}")
             item.cantidad = nueva_cant
-
-        nuevo_min = int(request.form.get("stock_minimo", item.stock_minimo))
-        if nuevo_min != item.stock_minimo:
-            cambios.append(f"stock_minimo: {item.stock_minimo} → {nuevo_min}")
-            item.stock_minimo = nuevo_min
 
         nueva_cat = int(request.form.get("categoria_id", item.categoria_id))
         if nueva_cat != item.categoria_id:
@@ -191,6 +199,15 @@ def editar_item(item_id):
                 file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], filename))
                 item.foto = filename
                 cambios.append("foto actualizada")
+
+        # PDF
+        if "pdf" in request.files:
+            pfile = request.files["pdf"]
+            if pfile and pfile.filename and allowed_pdf(pfile.filename):
+                pfilename = secure_filename(f"pdf_{item.barrio_id}_{pfile.filename}")
+                pfile.save(os.path.join(current_app.config["UPLOAD_FOLDER"], pfilename))
+                item.pdf = pfilename
+                cambios.append("PDF actualizado")
 
         if cambios:
             historial = Historial(

@@ -32,6 +32,7 @@ def buscar():
         query = query.filter(
             db.or_(
                 Item.nombre.ilike(like),
+                Item.codigo.ilike(like),
                 Item.descripcion.ilike(like),
                 Item.marca.ilike(like),
                 Item.modelo.ilike(like),
@@ -55,16 +56,16 @@ def buscar():
         todos = query.order_by(Item.nombre).all()
         buf = io.StringIO()
         writer = csv.writer(buf)
-        writer.writerow(["Nombre", "Categoría", "Barrio", "Ubicación", "Estado", "Cantidad", "Stock Mínimo", "Marca", "Modelo", "Nro. Serie", "Fecha Ingreso", "Notas"])
+        writer.writerow(["Nombre", "Código", "Categoría", "Barrio", "Ubicación", "Estado", "Cantidad", "Marca", "Modelo", "Nro. Serie", "Fecha Ingreso", "Notas"])
         for it in todos:
             writer.writerow([
                 it.nombre,
+                it.codigo or "",
                 it.categoria.nombre if it.categoria else "",
                 it.barrio.nombre if it.barrio else "",
                 it.ubicacion or "",
                 it.estado or "",
                 it.cantidad,
-                it.stock_minimo,
                 it.marca or "",
                 it.modelo or "",
                 it.numero_serie or "",

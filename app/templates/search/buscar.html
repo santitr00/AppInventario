@@ -123,12 +123,7 @@
               <span class="badge-estado badge-default">{{ item.estado }}</span>
             {% endif %}
           </td>
-          <td>
-            {{ item.cantidad }}
-            {% if item.stock_minimo > 0 and item.cantidad <= item.stock_minimo %}
-            <span class="badge-estado badge-stock-bajo ms-1" title="Stock bajo el mínimo ({{ item.stock_minimo }})"><i class="bi bi-exclamation-triangle-fill"></i></span>
-            {% endif %}
-          </td>
+          <td>{{ item.cantidad }}</td>
           <td>
             <div class="d-flex gap-1">
               {% if current_user.puede_editar() %}

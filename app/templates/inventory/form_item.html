@@ -10,17 +10,49 @@
 </nav>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+  .section-toggle {
+    background: #f8f9fb;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #444;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background .15s, border-color .15s;
+  }
+  .section-toggle:hover { background: #eef2f7; border-color: var(--accent); }
+  .section-toggle .toggle-icon { transition: transform .2s; color: var(--accent); }
+  .section-toggle:not(.collapsed) .toggle-icon { transform: rotate(90deg); }
+  .section-hint { font-size: 11.5px; color: #aaa; font-weight: 400; margin-left: auto; }
+</style>
+{% endblock %}
+
 {% block content %}
+{% set tiene_datos_tecnicos = item and (item.marca or item.modelo or item.numero_serie or item.foto or item.pdf or item.notas) %}
+
 <div class="card-custom p-4" style="max-width:800px">
   <form method="POST" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <div class="row g-3">
+    <!-- ── Datos generales ── -->
+    <div class="row g-3 mb-3">
       <div class="col-md-8">
         <label class="form-label fw-semibold" style="font-size:13px">Nombre *</label>
         <input type="text" name="nombre" class="form-control" value="{{ item.nombre if item else '' }}" required>
       </div>
       <div class="col-md-4">
+        <label class="form-label fw-semibold" style="font-size:13px">Código</label>
+        <input type="text" name="codigo" class="form-control" value="{{ item.codigo if item and item.codigo else '' }}" placeholder="Ej: CAM-001">
+      </div>
+      <div class="col-md-3">
         <label class="form-label fw-semibold" style="font-size:13px">Categoría *</label>
         <select name="categoria_id" class="form-select" required>
           {% for cat in categorias %}
@@ -28,11 +60,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-3">
-        <label class="form-label fw-semibold" style="font-size:13px">Código</label>
-        <input type="text" name="codigo" class="form-control" value="{{ item.codigo if item and item.codigo else '' }}" placeholder="Ej: CAM-001">
-      </div>
-      <div class="col-md-5">
+      <div class="col-md-4">
         <label class="form-label fw-semibold" style="font-size:13px">Ubicación</label>
         <input type="text" name="ubicacion" class="form-control" value="{{ item.ubicacion if item else '' }}" placeholder="Ej: Depósito central">
       </div>
@@ -44,43 +72,59 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-1">
+      <div class="col-md-2">
         <label class="form-label fw-semibold" style="font-size:13px">Cantidad</label>
         <input type="number" name="cantidad" class="form-control" value="{{ item.cantidad if item else 1 }}" min="0">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label fw-semibold" style="font-size:13px">Marca</label>
-        <input type="text" name="marca" class="form-control" value="{{ item.marca if item else '' }}">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label fw-semibold" style="font-size:13px">Modelo</label>
-        <input type="text" name="modelo" class="form-control" value="{{ item.modelo if item else '' }}">
-      </div>
-      <div class="col-md-4">
-        <label class="form-label fw-semibold" style="font-size:13px">Número de Serie</label>
-        <input type="text" name="numero_serie" class="form-control" value="{{ item.numero_serie if item else '' }}">
       </div>
       <div class="col-12">
         <label class="form-label fw-semibold" style="font-size:13px">Descripción</label>
         <textarea name="descripcion" class="form-control" rows="2">{{ item.descripcion if item else '' }}</textarea>
       </div>
-      <div class="col-12">
-        <label class="form-label fw-semibold" style="font-size:13px">Notas</label>
-        <textarea name="notas" class="form-control" rows="2">{{ item.notas if item else '' }}</textarea>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label fw-semibold" style="font-size:13px">Foto</label>
-        <input type="file" name="foto" class="form-control" accept="image/*">
-        {% if item and item.foto %}
-        <small class="text-muted">Foto actual: {{ item.foto }}</small>
-        {% endif %}
-      </div>
-      <div class="col-md-6">
-        <label class="form-label fw-semibold" style="font-size:13px">PDF adjunto <span class="text-muted fw-normal">(manual, ficha técnica, garantía)</span></label>
-        <input type="file" name="pdf" class="form-control" accept=".pdf">
-        {% if item and item.pdf %}
-        <small class="text-muted">PDF actual: {{ item.pdf }} — <a href="{{ url_for('static', filename='uploads/' + item.pdf) }}" target="_blank">abrir</a></small>
-        {% endif %}
+    </div>
+
+    <!-- ── Datos técnicos y adjuntos (colapsable) ── -->
+    <button type="button"
+            class="section-toggle {% if not tiene_datos_tecnicos %}collapsed{% endif %}"
+            data-bs-toggle="collapse"
+            data-bs-target="#datos-tecnicos"
+            aria-expanded="{{ 'true' if tiene_datos_tecnicos else 'false' }}">
+      <i class="bi bi-chevron-right toggle-icon"></i>
+      Datos técnicos y adjuntos
+      <span class="section-hint">Marca · Modelo · Serie · Foto · PDF · Notas</span>
+    </button>
+
+    <div class="collapse {% if tiene_datos_tecnicos %}show{% endif %}" id="datos-tecnicos">
+      <div class="row g-3 mt-1">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold" style="font-size:13px">Marca</label>
+          <input type="text" name="marca" class="form-control" value="{{ item.marca if item else '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold" style="font-size:13px">Modelo</label>
+          <input type="text" name="modelo" class="form-control" value="{{ item.modelo if item else '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold" style="font-size:13px">Número de Serie</label>
+          <input type="text" name="numero_serie" class="form-control" value="{{ item.numero_serie if item else '' }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" style="font-size:13px">Foto</label>
+          <input type="file" name="foto" class="form-control" accept="image/*">
+          {% if item and item.foto %}
+          <small class="text-muted">Foto actual: {{ item.foto }}</small>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold" style="font-size:13px">PDF adjunto <span class="text-muted fw-normal">(manual, ficha, garantía)</span></label>
+          <input type="file" name="pdf" class="form-control" accept=".pdf">
+          {% if item and item.pdf %}
+          <small class="text-muted">PDF actual: {{ item.pdf }} — <a href="{{ url_for('static', filename='uploads/' + item.pdf) }}" target="_blank">abrir</a></small>
+          {% endif %}
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-semibold" style="font-size:13px">Notas</label>
+          <textarea name="notas" class="form-control" rows="2">{{ item.notas if item else '' }}</textarea>
+        </div>
       </div>
     </div>
 

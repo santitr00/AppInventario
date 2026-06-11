@@ -12,12 +12,17 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from openpyxl import load_workbook
 from app import create_app, db
-from app.models import Item, Categoria, Historial, User
+from app.models import Item, Categoria, Barrio, Historial, User
 
 app = create_app()
 
 
 def importar(archivo, barrio_id, user_id=1):
+    barrio = db.session.get(Barrio, barrio_id)
+    if not barrio:
+        print(f"ERROR: Barrio con id={barrio_id} no encontrado.")
+        return
+
     wb = load_workbook(archivo)
     ws = wb.active
 
@@ -64,7 +69,8 @@ def importar(archivo, barrio_id, user_id=1):
         cat_nombre = str(vals[col_cat]).strip() if col_cat is not None and vals[col_cat] else "Otros"
         cat_id = cat_cache.get(cat_nombre.lower())
         if not cat_id:
-            nueva_cat = Categoria(nombre=cat_nombre)
+            nueva_cat = Categoria(nombre=cat_nombre, es_global=False)
+            nueva_cat.barrios = [barrio]
             db.session.add(nueva_cat)
             db.session.flush()
             cat_cache[cat_nombre.lower()] = nueva_cat.id
@@ -97,7 +103,7 @@ def importar(archivo, barrio_id, user_id=1):
         count += 1
 
     db.session.commit()
-    print(f"✓ {count} ítems importados al barrio {barrio_id}")
+    print(f"OK: {count} items importados al barrio {barrio_id} ({barrio.nombre})")
 
 
 if __name__ == "__main__":

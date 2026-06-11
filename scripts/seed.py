@@ -35,7 +35,7 @@ with app.app_context():
     ]
     for c_data in categorias_data:
         if not Categoria.query.filter_by(nombre=c_data["nombre"]).first():
-            db.session.add(Categoria(**c_data))
+            db.session.add(Categoria(es_global=True, **c_data))
 
     db.session.commit()
 

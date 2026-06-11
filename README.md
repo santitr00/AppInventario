@@ -38,6 +38,7 @@ Archivo `.env` (ver `.env.example`):
 | `SECRET_KEY` | Clave secreta Flask (generar con `secrets.token_hex(32)`) |
 | `DB_HOST` | Host MySQL (default: `127.0.0.1`) |
 | `DB_PORT` | Puerto MySQL (default: `3306`) |
+| `AUDIT_RETENTION_MONTHS` | Meses de retención del audit log (default: `12`) |
 
 ---
 
@@ -94,6 +95,25 @@ inventario-gltec/
 ├── .env.example
 └── DEPLOY.md                    # Guía de deploy en producción
 ```
+
+---
+
+## Auditoría y purga de logs
+
+El sistema registra eventos de seguridad y acciones relevantes en la tabla `audit_log`, visible solo para el rol `admin` en `/admin/auditoria`.
+
+### Purga manual
+
+```bash
+# Ver cuántas entradas se borrarían sin borrar nada
+flask purge-audit-log --dry-run
+
+# Ejecutar la purga
+flask purge-audit-log
+```
+
+El umbral se controla con `AUDIT_RETENTION_MONTHS` en `.env` (default: 12 meses).  
+Ver [DEPLOY.md — Sección 15](DEPLOY.md#15-purga-automática-del-audit-log-cron) para agendar la purga automática en el VPS.
 
 ---
 

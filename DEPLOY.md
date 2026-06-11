@@ -547,3 +547,61 @@ rsync -avz deploy@IP_DEL_SERVIDOR:/home/deploy/backups/ ./backups/
 
 > Un restore completo requiere ambas piezas: el dump de MySQL **y** la carpeta `uploads/`.
 > Sin los archivos de imagen, los ítems con foto mostrarán imagen rota aunque la DB esté intacta.
+
+---
+
+## 15. Purga automática del audit log (cron)
+
+El comando `flask purge-audit-log` borra todas las entradas de `audit_log` más antiguas
+que el umbral configurado en `AUDIT_RETENTION_MONTHS` (default: 12 meses).
+La purga es siempre masiva por antigüedad — nunca selectiva por evento.
+
+### Configurar el umbral
+
+En `/home/deploy/apps/InventarioGLTEC/.env`:
+
+```ini
+# Retener logs de los últimos 12 meses (ajustar según necesidad)
+AUDIT_RETENTION_MONTHS=12
+```
+
+### Agendar con cron
+
+Editar el crontab del usuario `deploy`:
+
+```bash
+crontab -e
+```
+
+Agregar la siguiente línea para ejecutar la purga el **primer día de cada mes a las 03:00**:
+
+```cron
+0 3 1 * * /home/deploy/apps/InventarioGLTEC/venv/bin/flask --app wsgi:app purge-audit-log >> /home/deploy/apps/InventarioGLTEC/logs/purge.log 2>&1
+```
+
+Verificar que el cron quedó registrado:
+
+```bash
+crontab -l
+```
+
+### Probar manualmente antes de agendar
+
+```bash
+cd /home/deploy/apps/InventarioGLTEC
+source venv/bin/activate
+
+# Primero en modo dry-run para ver cuántas filas se borrarían
+flask purge-audit-log --dry-run
+
+# Si el resultado es el esperado, ejecutar la purga real
+flask purge-audit-log
+```
+
+Salida esperada:
+
+```
+OK: 47 entrada(s) eliminadas del audit_log (anteriores a 2025-06-01, retencion: 12 meses).
+```
+
+> Si no hay entradas anteriores al umbral, el comando imprime `Nada que purgar` y termina sin errores.

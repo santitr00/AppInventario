@@ -44,6 +44,7 @@ def create_app():
     }
     app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "static", "uploads")
     app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB
+    app.config["AUDIT_RETENTION_MONTHS"] = int(os.getenv("AUDIT_RETENTION_MONTHS", "12"))
 
     # ── Logging ──
     _setup_logging(app)
@@ -102,6 +103,9 @@ def create_app():
             extra["admin_barrio_id"] = None
         return dict(current_user=current_user, **extra)
 
+    # ── CLI ──
+    _register_cli(app)
+
     # ── Error handlers ──
     @app.errorhandler(500)
     def internal_error(error):
@@ -113,6 +117,44 @@ def create_app():
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
     return app
+
+
+def _register_cli(app):
+    import click
+    from datetime import datetime, timezone, timedelta
+
+    @app.cli.command("purge-audit-log")
+    @click.option("--dry-run", is_flag=True, default=False,
+                  help="Mostrá cuántas filas se borrarían sin eliminar nada.")
+    def purge_audit_log(dry_run):
+        """Purga entradas del audit_log más antiguas que AUDIT_RETENTION_MONTHS."""
+        from app.models import AuditLog
+
+        months = app.config["AUDIT_RETENTION_MONTHS"]
+        cutoff = datetime.now(timezone.utc) - timedelta(days=months * 30)
+
+        count = AuditLog.query.filter(AuditLog.timestamp < cutoff).count()
+
+        if dry_run:
+            click.echo(
+                f"[dry-run] Se borrarían {count} entrada(s) anteriores a "
+                f"{cutoff.strftime('%Y-%m-%d')} (retención: {months} meses)."
+            )
+            return
+
+        if count == 0:
+            click.echo(
+                f"Nada que purgar (umbral: {cutoff.strftime('%Y-%m-%d')}, "
+                f"retención: {months} meses)."
+            )
+            return
+
+        AuditLog.query.filter(AuditLog.timestamp < cutoff).delete()
+        db.session.commit()
+        click.echo(
+            f"OK: {count} entrada(s) eliminadas del audit_log "
+            f"(anteriores a {cutoff.strftime('%Y-%m-%d')}, retencion: {months} meses)."
+        )
 
 
 def _setup_logging(app):

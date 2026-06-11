@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from app.models import User, Barrio, Categoria
+from app.models import User, Barrio, Categoria, AuditLog
+from app.audit import log_event
 from app import db
 from functools import wraps
 
@@ -11,6 +12,11 @@ def admin_or_gestor_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not current_user.is_authenticated or current_user.is_cliente:
+            log_event(
+                AuditLog.ACCESO_DENEGADO,
+                nivel=AuditLog.ALERTA,
+                detalle=f"Intento de acceso a ruta de gestión: {request.path}",
+            )
             flash("No tenés permisos para acceder.", "danger")
             return redirect(url_for("inventory.index"))
         return f(*args, **kwargs)
@@ -21,6 +27,11 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not current_user.is_authenticated or not current_user.is_admin:
+            log_event(
+                AuditLog.ACCESO_DENEGADO,
+                nivel=AuditLog.ALERTA,
+                detalle=f"Intento de acceso a ruta de admin: {request.path}",
+            )
             flash("Acceso restringido a administradores.", "danger")
             return redirect(url_for("inventory.index"))
         return f(*args, **kwargs)
@@ -62,6 +73,13 @@ def crear_usuario():
         user.set_password(request.form["password"])
         db.session.add(user)
         db.session.commit()
+        log_event(
+            AuditLog.USUARIO_CREADO,
+            target_tipo="usuario",
+            target_id=user.id,
+            target_label=user.username,
+            detalle=f"rol={user.rol}, barrio_id={user.barrio_id}",
+        )
         flash(f"Usuario '{username}' creado correctamente.", "success")
         return redirect(url_for("admin.usuarios"))
 
@@ -80,6 +98,7 @@ def editar_usuario(user_id):
     barrios = Barrio.query.filter_by(activo=True).all()
 
     if request.method == "POST":
+        old_rol = user.rol
         user.nombre_completo = request.form.get("nombre_completo", "")
         user.email = request.form.get("email", "")
         if current_user.is_admin:
@@ -91,6 +110,32 @@ def editar_usuario(user_id):
             user.set_password(new_pass)
 
         db.session.commit()
+
+        rol_cambio = current_user.is_admin and user.rol != old_rol
+        if rol_cambio:
+            log_event(
+                AuditLog.PRIVILEGIO_CAMBIADO,
+                nivel=AuditLog.ADVERTENCIA,
+                target_tipo="usuario",
+                target_id=user.id,
+                target_label=user.username,
+                detalle=f"rol: {old_rol} → {user.rol}",
+            )
+        if new_pass:
+            log_event(
+                AuditLog.PASSWORD_RESET,
+                target_tipo="usuario",
+                target_id=user.id,
+                target_label=user.username,
+            )
+        if not rol_cambio and not new_pass:
+            log_event(
+                AuditLog.USUARIO_EDITADO,
+                target_tipo="usuario",
+                target_id=user.id,
+                target_label=user.username,
+            )
+
         flash("Usuario actualizado.", "success")
         return redirect(url_for("admin.usuarios"))
 
@@ -105,6 +150,13 @@ def toggle_usuario(user_id):
     if user and user.id != current_user.id:
         user.activo = not user.activo
         db.session.commit()
+        accion_toggle = AuditLog.USUARIO_ACTIVADO if user.activo else AuditLog.USUARIO_DESACTIVADO
+        log_event(
+            accion_toggle,
+            target_tipo="usuario",
+            target_id=user.id,
+            target_label=user.username,
+        )
         estado = "activado" if user.activo else "desactivado"
         flash(f"Usuario '{user.username}' {estado}.", "info")
     return redirect(url_for("admin.usuarios"))
@@ -146,6 +198,13 @@ def crear_categoria():
             cat.barrios = Barrio.query.filter(Barrio.id.in_(barrio_ids)).all()
         db.session.add(cat)
         db.session.commit()
+        log_event(
+            AuditLog.CATEGORIA_CREADA,
+            target_tipo="categoria",
+            target_id=cat.id,
+            target_label=cat.nombre,
+            detalle=f"global={cat.es_global}",
+        )
         flash(f"Categoría '{nombre}' creada.", "success")
         return redirect(url_for("admin.categorias"))
     return render_template("admin/form_categoria.html", categoria=None, barrios=barrios)
@@ -191,9 +250,18 @@ def eliminar_categoria(cat_id):
         if cat.items.count() > 0:
             flash("No podés eliminar una categoría con ítems asignados.", "danger")
         else:
+            nombre_cat = cat.nombre
+            cat_id_log = cat.id
             db.session.delete(cat)
             db.session.commit()
-            flash(f"Categoría '{cat.nombre}' eliminada.", "success")
+            log_event(
+                AuditLog.CATEGORIA_ELIMINADA,
+                nivel=AuditLog.ADVERTENCIA,
+                target_tipo="categoria",
+                target_id=cat_id_log,
+                target_label=nombre_cat,
+            )
+            flash(f"Categoría '{nombre_cat}' eliminada.", "success")
     return redirect(url_for("admin.categorias"))
 
 
@@ -216,6 +284,12 @@ def crear_barrio():
         )
         db.session.add(barrio)
         db.session.commit()
+        log_event(
+            AuditLog.BARRIO_CREADO,
+            target_tipo="barrio",
+            target_id=barrio.id,
+            target_label=barrio.nombre,
+        )
         flash(f"Barrio '{barrio.nombre}' creado.", "success")
         return redirect(url_for("admin.barrios"))
     return render_template("admin/form_barrio.html", barrio=None)

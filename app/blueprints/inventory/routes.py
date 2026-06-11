@@ -3,7 +3,8 @@ from datetime import date
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app.models import Item, Categoria, Historial, Barrio
+from app.models import Item, Categoria, Historial, Barrio, AuditLog
+from app.audit import log_event
 from app import db
 
 inventory_bp = Blueprint("inventory", __name__, template_folder="../../templates/inventory")
@@ -151,6 +152,14 @@ def ver_item(item_id):
 
     # Verificar acceso por barrio
     if not current_user.is_admin and item.barrio_id != current_user.barrio_id:
+        log_event(
+            AuditLog.ACCESO_DENEGADO,
+            nivel=AuditLog.ALERTA,
+            target_tipo="item",
+            target_id=item.id,
+            target_label=item.nombre,
+            detalle=f"intento de ver ítem de barrio_id={item.barrio_id}",
+        )
         flash("No tenés acceso a este ítem.", "danger")
         return redirect(url_for("inventory.index"))
 
@@ -168,6 +177,18 @@ def editar_item(item_id):
     item = db.session.get(Item, item_id)
     if not item or not item.activo:
         flash("Ítem no encontrado.", "warning")
+        return redirect(url_for("inventory.index"))
+
+    if not current_user.is_admin and item.barrio_id != current_user.barrio_id:
+        log_event(
+            AuditLog.ACCESO_DENEGADO,
+            nivel=AuditLog.ALERTA,
+            target_tipo="item",
+            target_id=item.id,
+            target_label=item.nombre,
+            detalle=f"intento de editar ítem de barrio_id={item.barrio_id}",
+        )
+        flash("No tenés acceso a este ítem.", "danger")
         return redirect(url_for("inventory.index"))
 
     barrio_id = get_user_barrio_id()
@@ -237,6 +258,8 @@ def baja_item(item_id):
 
     item = db.session.get(Item, item_id)
     if item:
+        nombre_item = item.nombre
+        item_id_log = item.id
         item.activo = False
         historial = Historial(
             item_id=item.id,
@@ -246,6 +269,13 @@ def baja_item(item_id):
         )
         db.session.add(historial)
         db.session.commit()
-        flash(f"Ítem '{item.nombre}' dado de baja.", "warning")
+        log_event(
+            AuditLog.ITEM_BAJA,
+            nivel=AuditLog.ADVERTENCIA,
+            target_tipo="item",
+            target_id=item_id_log,
+            target_label=nombre_item,
+        )
+        flash(f"Ítem '{nombre_item}' dado de baja.", "warning")
 
     return redirect(url_for("inventory.index"))

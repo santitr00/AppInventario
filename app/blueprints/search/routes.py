@@ -3,7 +3,8 @@ from itertools import groupby
 
 from flask import Blueprint, render_template, request, session, make_response
 from flask_login import login_required, current_user
-from app.models import Item, Categoria, Barrio
+from app.models import Item, Categoria, Barrio, AuditLog
+from app.audit import log_event
 from app import db
 import csv
 import io
@@ -89,6 +90,16 @@ def buscar():
         output = make_response(csv_bytes.encode("utf-8"))
         output.headers["Content-Disposition"] = "attachment; filename=inventario.csv"
         output.headers["Content-Type"] = "text/csv; charset=utf-8-sig"
+        filtros_str = ", ".join(filter(None, [
+            f"q={q!r}" if q else "",
+            f"categoria_id={categoria_id}" if categoria_id else "",
+            f"estado={estado!r}" if estado else "",
+            f"ubicacion={ubicacion!r}" if ubicacion else "",
+        ])) or "ninguno"
+        log_event(
+            AuditLog.EXPORT_CSV,
+            detalle=f"filtros: {filtros_str}; items={len(todos)}",
+        )
         return output
 
     pagination = query.order_by(Item.nombre).paginate(page=page, per_page=20, error_out=False)
@@ -170,4 +181,8 @@ def export_pdf():
     response = make_response(pdf_bytes)
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    log_event(
+        AuditLog.EXPORT_PDF,
+        detalle=f"filtros: {', '.join(filtros) or 'ninguno'}; items={len(todos)}; barrio={barrio_nombre}",
+    )
     return response

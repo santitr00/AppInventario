@@ -3,62 +3,310 @@
 <head>
   <meta charset="UTF-8">
   <title>Inventario — {{ barrio_nombre }}</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
   <style>
-    body { font-family: sans-serif; font-size: 12px; color: #222; margin: 2cm; }
-    h1 { color: #1B4F72; margin-bottom: 4px; }
-    .meta { color: #555; margin-bottom: 16px; font-size: 11px; }
-    h2 { color: #2E86C1; border-bottom: 1px solid #2E86C1; padding-bottom: 3px; margin-top: 24px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-    th { background: #1B4F72; color: white; padding: 5px 8px; text-align: left; font-size: 11px; }
-    td { padding: 4px 8px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
-    .empty { text-align: center; color: #888; padding: 24px; }
+    @page {
+      size: A4 portrait;
+      margin: 2cm 1.8cm 2.4cm 1.8cm;
+      @bottom-left {
+        content: "GLTEC · Tecnología sin Límites";
+        font-family: 'DM Sans', Arial, Helvetica, sans-serif;
+        font-size: 8px;
+        color: #aaa;
+        padding-top: 6px;
+        border-top: 1px solid #e0e0e0;
+      }
+      @bottom-right {
+        content: "Página " counter(page) " de " counter(pages);
+        font-family: 'DM Sans', Arial, Helvetica, sans-serif;
+        font-size: 8px;
+        color: #aaa;
+        padding-top: 6px;
+        border-top: 1px solid #e0e0e0;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      color: #1a1a2e;
+      line-height: 1.45;
+    }
+
+    /* ── Encabezado ── */
+    .header {
+      padding-bottom: 14px;
+      border-bottom: 2px solid #1B4F72;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      margin-bottom: 10px;
+    }
+
+    .brand-name {
+      font-size: 19px;
+      font-weight: 700;
+      color: #1B4F72;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-tagline {
+      font-size: 9.5px;
+      font-weight: 500;
+      color: #2E86C1;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-left: 9px;
+    }
+
+    .doc-title {
+      font-size: 21px;
+      font-weight: 700;
+      color: #1B4F72;
+      margin-bottom: 2px;
+      line-height: 1.2;
+    }
+
+    .doc-barrio {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2E86C1;
+      margin-bottom: 8px;
+    }
+
+    .meta-row {
+      font-size: 9.5px;
+      color: #777;
+      margin-top: 3px;
+    }
+
+    .meta-label {
+      font-weight: 600;
+      color: #555;
+    }
+
+    .meta-total {
+      font-size: 10px;
+      font-weight: 600;
+      color: #1B4F72;
+      margin-top: 5px;
+    }
+
+    /* ── Sección de categoría ── */
+    .cat-section {
+      margin-top: 18px;
+    }
+
+    .cat-header {
+      padding: 5px 0 5px 10px;
+      margin-bottom: 1px;
+      border-left: 4px solid #2E86C1;
+      overflow: hidden;
+      page-break-after: avoid;
+    }
+
+    .cat-header-name {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #1a1a2e;
+      float: left;
+    }
+
+    .cat-header-count {
+      font-size: 9.5px;
+      color: #999;
+      float: right;
+      margin-top: 1px;
+    }
+
+    /* ── Tabla de ítems ── */
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .items-table thead tr {
+      background: #f4f6f9;
+    }
+
+    .items-table th {
+      font-size: 9px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 5px 8px;
+      text-align: left;
+      border-bottom: 1.5px solid #dde2ea;
+    }
+
+    .items-table td {
+      padding: 6px 8px;
+      vertical-align: top;
+      border-bottom: 1px solid #edf0f4;
+    }
+
+    .items-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr { page-break-inside: avoid; }
+
+    .col-codigo    { width: 9%; }
+    .col-nombre    { width: 37%; }
+    .col-ubicacion { width: 19%; }
+    .col-estado    { width: 18%; }
+    .col-cantidad  { width: 8%; text-align: center; }
+
+    .td-codigo {
+      font-size: 10px;
+      color: #999;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .item-nombre {
+      font-size: 11px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .item-tech {
+      font-size: 9px;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    .item-desc {
+      font-size: 9px;
+      color: #bbb;
+      margin-top: 2px;
+      font-style: italic;
+    }
+
+    .td-ubicacion {
+      font-size: 10.5px;
+      color: #444;
+    }
+
+    .td-cantidad {
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* ── Badges de estado (colores de la app) ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 9px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-operativo  { background: #e6f9ee; color: #1a8a4a; }
+    .badge-stock-bajo { background: #fff8e1; color: #b8860b; }
+    .badge-reparacion { background: #fde8e8; color: #c0392b; }
+    .badge-prestamo   { background: #e8f0fe; color: #1B4F72; }
+    .badge-fuera      { background: #fde8e8; color: #c0392b; }
+    .badge-revisar    { background: #fff8e1; color: #b8860b; }
+    .badge-default    { background: #f0f2f5; color: #555; }
+
+    /* ── Sin resultados ── */
+    .empty {
+      text-align: center;
+      color: #aaa;
+      padding: 40px 0;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
-  <h1>Inventario — {{ barrio_nombre }}</h1>
-  <div class="meta">
-    Fecha: {{ fecha.strftime('%d/%m/%Y') }} &nbsp;·&nbsp; Total: {{ total }} ítem{{ 's' if total != 1 }}<br>
-    {% if filtros %}Filtros: {{ filtros | join(' · ') }}{% else %}Sin filtros — inventario completo{% endif %}
-  </div>
 
-  {% if grupos %}
-    {% for cat, items in grupos %}
-    <h2>{{ cat.nombre if cat else 'Sin categoría' }}</h2>
-    <table>
+<!-- ENCABEZADO -->
+<div class="header">
+  <div class="brand">
+    <span class="brand-name">GLTEC</span><span class="brand-tagline">Tecnología sin Límites</span>
+  </div>
+  <div class="doc-title">Inventario</div>
+  <div class="doc-barrio">{{ barrio_nombre }}</div>
+  <div class="meta-row">
+    <span class="meta-label">Fecha:</span> {{ fecha.strftime('%d/%m/%Y') }}
+  </div>
+  <div class="meta-row">
+    {% if filtros %}
+    <span class="meta-label">Filtros:</span> {{ filtros | join(' · ') }}
+    {% else %}
+    Sin filtros — inventario completo
+    {% endif %}
+  </div>
+  <div class="meta-total">{{ total }} ítem{{ 's' if total != 1 }} exportado{{ 's' if total != 1 }}</div>
+</div>
+
+<!-- CUERPO -->
+{% if grupos %}
+  {% for cat, items in grupos %}
+  <div class="cat-section">
+    <div class="cat-header" style="border-left-color: {{ cat.color if cat else '#2E86C1' }}">
+      <span class="cat-header-count">{{ items | length }} ítem{{ 's' if items | length != 1 }}</span>
+      <span class="cat-header-name">{{ cat.nombre if cat else 'Sin categoría' }}</span>
+    </div>
+    <table class="items-table">
       <thead>
         <tr>
-          <th>Código</th><th>Nombre</th><th>Ubicación</th><th>Estado</th><th>Cant.</th>
+          <th class="col-codigo">Código</th>
+          <th class="col-nombre">Nombre</th>
+          <th class="col-ubicacion">Ubicación</th>
+          <th class="col-estado">Estado</th>
+          <th class="col-cantidad">Cant.</th>
         </tr>
       </thead>
       <tbody>
         {% for item in items %}
+        {% set el = item.estado | lower | replace(' ', '-') if item.estado else '' %}
         <tr>
-          <td>{{ item.codigo or '—' }}</td>
+          <td class="td-codigo">{{ item.codigo or '—' }}</td>
           <td>
-            {{ item.nombre }}
-            {% if item.marca or item.modelo %}
-            <br><small style="color:#777">{{ [item.marca, item.modelo] | select | join(' ') }}</small>
-            {% endif %}
-            {% if item.numero_serie %}
-            <br><small style="color:#777">S/N: {{ item.numero_serie }}</small>
-            {% endif %}
-            {% if item.descripcion %}
-            <br><small style="color:#999">{{ item.descripcion }}</small>
-            {% endif %}
-            {% if item.notas %}
-            <br><small style="color:#999"><em>{{ item.notas }}</em></small>
+            <div class="item-nombre">{{ item.nombre }}</div>
+            {%- set tech = [] -%}
+            {%- if item.marca    -%}{%- set _ = tech.append(item.marca)                                    -%}{%- endif -%}
+            {%- if item.modelo   -%}{%- set _ = tech.append(item.modelo)                                   -%}{%- endif -%}
+            {%- if item.numero_serie -%}{%- set _ = tech.append('S/N: ' ~ item.numero_serie)               -%}{%- endif -%}
+            {%- if item.fecha_ingreso -%}{%- set _ = tech.append('Ingreso: ' ~ item.fecha_ingreso.strftime('%d/%m/%Y')) -%}{%- endif -%}
+            {%- if tech -%}
+            <div class="item-tech">{{ tech | join(' · ') }}</div>
+            {%- endif -%}
+            {%- if item.descripcion -%}
+            <div class="item-desc">{{ item.descripcion }}</div>
+            {%- endif -%}
+            {%- if item.notas -%}
+            <div class="item-desc">Notas: {{ item.notas }}</div>
+            {%- endif -%}
+          </td>
+          <td class="td-ubicacion">{{ item.ubicacion or '—' }}</td>
+          <td>
+            {% if   'operat'   in el %}<span class="badge badge-operativo">{{ item.estado }}</span>
+            {% elif 'bajo'     in el %}<span class="badge badge-stock-bajo">{{ item.estado }}</span>
+            {% elif 'reparac'  in el %}<span class="badge badge-reparacion">{{ item.estado }}</span>
+            {% elif 'préstamo' in el or 'prestamo' in el %}<span class="badge badge-prestamo">{{ item.estado }}</span>
+            {% elif 'fuera'    in el %}<span class="badge badge-fuera">{{ item.estado }}</span>
+            {% elif 'revisar'  in el %}<span class="badge badge-revisar">{{ item.estado }}</span>
+            {% else %}<span class="badge badge-default">{{ item.estado or '—' }}</span>
             {% endif %}
           </td>
-          <td>{{ item.ubicacion or '—' }}</td>
-          <td>{{ item.estado or '—' }}</td>
-          <td>{{ item.cantidad }}</td>
+          <td class="td-cantidad">{{ item.cantidad }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    {% endfor %}
-  {% else %}
-  <p class="empty">No se encontraron ítems con los filtros aplicados.</p>
-  {% endif %}
+  </div>
+  {% endfor %}
+{% else %}
+<div class="empty">No se encontraron ítems con los filtros aplicados.</div>
+{% endif %}
+
 </body>
 </html>

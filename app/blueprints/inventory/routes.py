@@ -48,9 +48,9 @@ def index():
 
     # Stats
     if barrio_id:
-        base_q = Item.query.filter_by(barrio_id=barrio_id, activo=True)
+        base_q = Item.query.filter_by(barrio_id=barrio_id)
     else:
-        base_q = Item.query.filter_by(activo=True)
+        base_q = Item.query
 
     total = base_q.count()
     categorias = Categoria.visibles_para_barrio(barrio_id)
@@ -175,7 +175,7 @@ def editar_item(item_id):
         return redirect(url_for("inventory.index"))
 
     item = db.session.get(Item, item_id)
-    if not item or not item.activo:
+    if not item:
         flash("Ítem no encontrado.", "warning")
         return redirect(url_for("inventory.index"))
 
@@ -247,35 +247,3 @@ def editar_item(item_id):
         return redirect(url_for("inventory.ver_item", item_id=item.id))
 
     return render_template("inventory/form_item.html", item=item, categorias=categorias)
-
-
-@inventory_bp.route("/item/<int:item_id>/baja", methods=["POST"])
-@login_required
-def baja_item(item_id):
-    if not current_user.puede_editar():
-        flash("No tenés permisos.", "danger")
-        return redirect(url_for("inventory.index"))
-
-    item = db.session.get(Item, item_id)
-    if item:
-        nombre_item = item.nombre
-        item_id_log = item.id
-        item.activo = False
-        historial = Historial(
-            item_id=item.id,
-            user_id=current_user.id,
-            accion="baja",
-            detalle=f"Baja del ítem: {item.nombre}",
-        )
-        db.session.add(historial)
-        db.session.commit()
-        log_event(
-            AuditLog.ITEM_BAJA,
-            nivel=AuditLog.ADVERTENCIA,
-            target_tipo="item",
-            target_id=item_id_log,
-            target_label=nombre_item,
-        )
-        flash(f"Ítem '{nombre_item}' dado de baja.", "warning")
-
-    return redirect(url_for("inventory.index"))

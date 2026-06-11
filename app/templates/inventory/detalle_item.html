@@ -20,10 +20,6 @@
 <div class="d-flex gap-2 mb-4" style="margin-top:-12px">
   {% if current_user.puede_editar() %}
   <a href="{{ url_for('inventory.editar_item', item_id=item.id) }}" class="btn btn-sm btn-gltec"><i class="bi bi-pencil"></i> Editar</a>
-  <form method="POST" action="{{ url_for('inventory.baja_item', item_id=item.id) }}" class="d-inline" onsubmit="return confirm('¿Confirmar baja de este ítem?')">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Dar de Baja</button>
-  </form>
   {% endif %}
 </div>
 
@@ -69,6 +65,8 @@
           {% set estado_lower = item.estado|lower %}
           {% if 'operat' in estado_lower %}
             <span class="badge-estado badge-operativo">{{ item.estado }}</span>
+          {% elif 'baja' in estado_lower %}
+            <span class="badge-estado" style="background:#fdecea;color:#c0392b;border:1px solid #f5c6cb;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600">{{ item.estado }}</span>
           {% elif 'bajo' in estado_lower %}
             <span class="badge-estado badge-stock-bajo">{{ item.estado }}</span>
           {% elif 'reparac' in estado_lower %}

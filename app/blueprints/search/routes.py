@@ -13,7 +13,7 @@ search_bp = Blueprint("search", __name__, template_folder="../../templates/searc
 
 
 def build_items_query(q, categoria_id, estado, ubicacion, user, admin_barrio_id):
-    query = Item.query.filter_by(activo=True)
+    query = Item.query
 
     if not user.is_admin:
         query = query.filter_by(barrio_id=user.barrio_id)

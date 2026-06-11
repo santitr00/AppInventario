@@ -25,7 +25,7 @@
           <td>
             <span class="cat-dot" style="background:{{ cat.color }}"></span>
             <strong>{{ cat.nombre }}</strong>
-            {% if cat.barrio_id is none %}
+            {% if cat.es_global %}
             <span class="badge rounded-pill bg-light text-muted ms-1" style="font-size:10px">Global</span>
             {% endif %}
           </td>

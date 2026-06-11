@@ -57,14 +57,27 @@ class User(UserMixin, db.Model):
         return f"<User {self.username} ({self.rol})>"
 
 
+categoria_barrios = db.Table(
+    "categoria_barrios",
+    db.Column("categoria_id", db.Integer, db.ForeignKey("categorias.id"), primary_key=True),
+    db.Column("barrio_id", db.Integer, db.ForeignKey("barrios.id"), primary_key=True),
+)
+
+
 class Categoria(db.Model):
     __tablename__ = "categorias"
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
-    color = db.Column(db.String(7), default="#2E86C1")  # hex color
-    icono = db.Column(db.String(50), default="bi-box")  # Bootstrap icon class
-    barrio_id = db.Column(db.Integer, db.ForeignKey("barrios.id"), nullable=True)
-    # barrio_id NULL = categoría global (disponible en todos los barrios)
+    color = db.Column(db.String(7), default="#2E86C1")
+    icono = db.Column(db.String(50), default="bi-box")
+    es_global = db.Column(db.Boolean, default=False, nullable=False)
+
+    barrios = db.relationship(
+        "Barrio",
+        secondary=categoria_barrios,
+        lazy="subquery",
+        backref=db.backref("categorias", lazy=True),
+    )
     items = db.relationship("Item", backref="categoria", lazy="dynamic")
 
     def __repr__(self):

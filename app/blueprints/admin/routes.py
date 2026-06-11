@@ -122,21 +122,33 @@ def categorias():
 @login_required
 @admin_required
 def crear_categoria():
+    barrios = Barrio.query.filter_by(activo=True).order_by(Barrio.nombre).all()
     if request.method == "POST":
         nombre = request.form["nombre"].strip()
+        es_global = "es_global" in request.form
+        barrio_ids = [int(bid) for bid in request.form.getlist("barrio_ids") if bid]
+
+        if not es_global and not barrio_ids:
+            flash("Seleccioná al menos un barrio o marcá la categoría como global.", "warning")
+            return render_template("admin/form_categoria.html", categoria=None, barrios=barrios)
+
         if Categoria.query.filter_by(nombre=nombre).first():
             flash("Ya existe una categoría con ese nombre.", "danger")
-        else:
-            cat = Categoria(
-                nombre=nombre,
-                color=request.form.get("color", "#2E86C1"),
-                icono=request.form.get("icono", "bi-box"),
-            )
-            db.session.add(cat)
-            db.session.commit()
-            flash(f"Categoría '{nombre}' creada.", "success")
-            return redirect(url_for("admin.categorias"))
-    return render_template("admin/form_categoria.html", categoria=None)
+            return render_template("admin/form_categoria.html", categoria=None, barrios=barrios)
+
+        cat = Categoria(
+            nombre=nombre,
+            color=request.form.get("color", "#2E86C1"),
+            icono=request.form.get("icono", "bi-box"),
+            es_global=es_global,
+        )
+        if not es_global:
+            cat.barrios = Barrio.query.filter(Barrio.id.in_(barrio_ids)).all()
+        db.session.add(cat)
+        db.session.commit()
+        flash(f"Categoría '{nombre}' creada.", "success")
+        return redirect(url_for("admin.categorias"))
+    return render_template("admin/form_categoria.html", categoria=None, barrios=barrios)
 
 
 @admin_bp.route("/categorias/<int:cat_id>/editar", methods=["GET", "POST"])
@@ -148,15 +160,26 @@ def editar_categoria(cat_id):
         flash("Categoría no encontrada.", "warning")
         return redirect(url_for("admin.categorias"))
 
+    barrios = Barrio.query.filter_by(activo=True).order_by(Barrio.nombre).all()
+
     if request.method == "POST":
+        es_global = "es_global" in request.form
+        barrio_ids = [int(bid) for bid in request.form.getlist("barrio_ids") if bid]
+
+        if not es_global and not barrio_ids:
+            flash("Seleccioná al menos un barrio o marcá la categoría como global.", "warning")
+            return render_template("admin/form_categoria.html", categoria=cat, barrios=barrios)
+
         cat.nombre = request.form["nombre"].strip()
         cat.color = request.form.get("color", cat.color)
         cat.icono = request.form.get("icono", cat.icono)
+        cat.es_global = es_global
+        cat.barrios = [] if es_global else Barrio.query.filter(Barrio.id.in_(barrio_ids)).all()
         db.session.commit()
         flash("Categoría actualizada.", "success")
         return redirect(url_for("admin.categorias"))
 
-    return render_template("admin/form_categoria.html", categoria=cat)
+    return render_template("admin/form_categoria.html", categoria=cat, barrios=barrios)
 
 
 @admin_bp.route("/categorias/<int:cat_id>/eliminar", methods=["POST"])

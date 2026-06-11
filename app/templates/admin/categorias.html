@@ -25,9 +25,21 @@
           <td>
             <span class="cat-dot" style="background:{{ cat.color }}"></span>
             <strong>{{ cat.nombre }}</strong>
-            {% if cat.es_global %}
-            <span class="badge rounded-pill bg-light text-muted ms-1" style="font-size:10px">Global</span>
-            {% endif %}
+            <div class="mt-1" style="margin-left:1.4em">
+              {% if cat.es_global %}
+                <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:10px">
+                  <i class="bi bi-globe2"></i> Global
+                </span>
+              {% elif cat.barrios %}
+                {% for b in cat.barrios %}
+                  <span class="badge rounded-pill" style="background:#eaf6fb;color:#1B4F72;font-size:10px">{{ b.nombre }}</span>
+                {% endfor %}
+              {% else %}
+                <span class="badge rounded-pill bg-warning bg-opacity-25 text-warning-emphasis" style="font-size:10px">
+                  <i class="bi bi-exclamation-triangle"></i> Sin barrios
+                </span>
+              {% endif %}
+            </div>
           </td>
           <td><i class="bi {{ cat.icono }}" style="font-size:18px;color:{{ cat.color }}"></i></td>
           <td>

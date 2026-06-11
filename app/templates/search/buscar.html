@@ -39,9 +39,6 @@
     {% if q %}para "<strong style="color:#1B4F72">{{ q }}</strong>"{% endif %}
   </span>
   <div class="d-flex gap-2 align-items-center flex-wrap">
-    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, format='csv') }}" class="btn btn-sm btn-outline-secondary" title="Exportar a CSV">
-      <i class="bi bi-download"></i> CSV
-    </a>
     {% if q %}
     <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
       {{ q }}

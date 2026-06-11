@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.models import User, Barrio, Categoria, AuditLog
@@ -6,6 +8,28 @@ from app import db
 from functools import wraps
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin", template_folder="../../templates/admin")
+
+AUDIT_ACCIONES = [
+    (AuditLog.LOGIN_OK,            "Login exitoso"),
+    (AuditLog.LOGIN_FAIL,          "Login fallido"),
+    (AuditLog.LOGOUT,              "Logout"),
+    (AuditLog.ACCESO_DENEGADO,     "Acceso denegado"),
+    (AuditLog.USUARIO_CREADO,      "Usuario creado"),
+    (AuditLog.USUARIO_EDITADO,     "Usuario editado"),
+    (AuditLog.PRIVILEGIO_CAMBIADO, "Privilegio cambiado"),
+    (AuditLog.PASSWORD_RESET,      "Reseteo de contraseña"),
+    (AuditLog.USUARIO_ACTIVADO,    "Usuario activado"),
+    (AuditLog.USUARIO_DESACTIVADO, "Usuario desactivado"),
+    (AuditLog.ITEM_BAJA,           "Baja de ítem"),
+    (AuditLog.ITEM_ELIMINADO,      "Eliminación de ítem"),
+    (AuditLog.BARRIO_CREADO,       "Barrio creado"),
+    (AuditLog.BARRIO_ELIMINADO,    "Barrio eliminado"),
+    (AuditLog.CATEGORIA_CREADA,    "Categoría creada"),
+    (AuditLog.CATEGORIA_ELIMINADA, "Categoría eliminada"),
+    (AuditLog.EXPORT_CSV,          "Exportación CSV"),
+    (AuditLog.EXPORT_PDF,          "Exportación PDF"),
+]
+AUDIT_ACCIONES_MAP = dict(AUDIT_ACCIONES)
 
 
 def admin_or_gestor_required(f):
@@ -293,3 +317,54 @@ def crear_barrio():
         flash(f"Barrio '{barrio.nombre}' creado.", "success")
         return redirect(url_for("admin.barrios"))
     return render_template("admin/form_barrio.html", barrio=None)
+
+
+@admin_bp.route("/auditoria")
+@login_required
+@admin_required
+def auditoria():
+    accion_f       = request.args.get("accion", "").strip()
+    actor_f        = request.args.get("actor_username", "").strip()
+    ip_f           = request.args.get("ip", "").strip()
+    nivel_f        = request.args.get("nivel", "").strip()
+    fecha_desde_f  = request.args.get("fecha_desde", "").strip()
+    fecha_hasta_f  = request.args.get("fecha_hasta", "").strip()
+    page           = request.args.get("page", 1, type=int)
+
+    query = AuditLog.query.order_by(AuditLog.timestamp.desc())
+
+    if accion_f:
+        query = query.filter(AuditLog.accion == accion_f)
+    if actor_f:
+        query = query.filter(AuditLog.actor_username.ilike(f"%{actor_f}%"))
+    if ip_f:
+        query = query.filter(AuditLog.ip.ilike(f"%{ip_f}%"))
+    if nivel_f:
+        query = query.filter(AuditLog.nivel == nivel_f)
+    if fecha_desde_f:
+        try:
+            query = query.filter(AuditLog.timestamp >= datetime.strptime(fecha_desde_f, "%Y-%m-%d"))
+        except ValueError:
+            fecha_desde_f = ""
+    if fecha_hasta_f:
+        try:
+            hasta = datetime.strptime(fecha_hasta_f, "%Y-%m-%d") + timedelta(days=1)
+            query = query.filter(AuditLog.timestamp < hasta)
+        except ValueError:
+            fecha_hasta_f = ""
+
+    pagination = query.paginate(page=page, per_page=30, error_out=False)
+
+    return render_template(
+        "admin/auditoria.html",
+        logs=pagination.items,
+        pagination=pagination,
+        acciones=AUDIT_ACCIONES,
+        acciones_map=AUDIT_ACCIONES_MAP,
+        accion_f=accion_f,
+        actor_f=actor_f,
+        ip_f=ip_f,
+        nivel_f=nivel_f,
+        fecha_desde_f=fecha_desde_f,
+        fecha_hasta_f=fecha_hasta_f,
+    )

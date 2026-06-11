@@ -1,0 +1,209 @@
+{% extends "layouts/base.html" %}
+{% block title %}Auditoría{% endblock %}
+{% block page_title %}Registro de Auditoría{% endblock %}
+
+{% block extra_css %}
+<style>
+  .audit-alerta  { background: #fff5f5 !important; }
+  .nivel-alerta  { background: #fde8e8; color: #c0392b; }
+  .nivel-advertencia { background: #fff8e1; color: #b8860b; }
+  .nivel-info    { background: #e8f0fe; color: #1B4F72; }
+  .detalle-cell  { max-width: 260px; }
+  .detalle-cell span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Filtros -->
+<div class="card-custom p-3 mb-4">
+  <form method="GET" action="{{ url_for('admin.auditoria') }}">
+    <div class="row g-2 align-items-end">
+
+      <div class="col-sm-6 col-md-3">
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">Acción</label>
+        <select name="accion" class="form-select form-select-sm">
+          <option value="">Todas</option>
+          {% for val, label in acciones %}
+          <option value="{{ val }}" {% if accion_f == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">Nivel</label>
+        <select name="nivel" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="alerta"      {% if nivel_f == 'alerta' %}selected{% endif %}>Alerta</option>
+          <option value="advertencia" {% if nivel_f == 'advertencia' %}selected{% endif %}>Advertencia</option>
+          <option value="info"        {% if nivel_f == 'info' %}selected{% endif %}>Info</option>
+        </select>
+      </div>
+
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">Usuario</label>
+        <input type="text" name="actor_username" class="form-control form-control-sm" value="{{ actor_f }}" placeholder="Nombre…">
+      </div>
+
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">IP</label>
+        <input type="text" name="ip" class="form-control form-control-sm" value="{{ ip_f }}" placeholder="192.168…">
+      </div>
+
+      <div class="col-sm-6 col-md-1">
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">Desde</label>
+        <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ fecha_desde_f }}">
+      </div>
+
+      <div class="col-sm-6 col-md-1">
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">Hasta</label>
+        <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ fecha_hasta_f }}">
+      </div>
+
+      <div class="col-sm-12 col-md-1 d-flex gap-1">
+        <button type="submit" class="btn btn-sm btn-gltec flex-grow-1"><i class="bi bi-funnel"></i></button>
+        {% if accion_f or actor_f or ip_f or nivel_f or fecha_desde_f or fecha_hasta_f %}
+        <a href="{{ url_for('admin.auditoria') }}" class="btn btn-sm btn-outline-secondary" title="Limpiar filtros"><i class="bi bi-x-lg"></i></a>
+        {% endif %}
+      </div>
+
+    </div>
+  </form>
+</div>
+
+<!-- Filtros activos -->
+{% if accion_f or actor_f or ip_f or nivel_f or fecha_desde_f or fecha_hasta_f %}
+<div class="d-flex gap-2 flex-wrap mb-3 align-items-center">
+  <span style="font-size:12px;color:#888">Filtrando por:</span>
+  {% if accion_f %}
+  <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:12px;font-weight:600">
+    {{ acciones_map.get(accion_f, accion_f) }}
+  </span>
+  {% endif %}
+  {% if nivel_f %}
+  <span class="badge-estado nivel-{{ nivel_f }}" style="font-size:12px">{{ nivel_f|capitalize }}</span>
+  {% endif %}
+  {% if actor_f %}
+  <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:12px;font-weight:600">
+    <i class="bi bi-person" style="font-size:10px"></i> {{ actor_f }}
+  </span>
+  {% endif %}
+  {% if ip_f %}
+  <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:12px;font-weight:600">
+    <i class="bi bi-wifi" style="font-size:10px"></i> {{ ip_f }}
+  </span>
+  {% endif %}
+  {% if fecha_desde_f or fecha_hasta_f %}
+  <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:12px;font-weight:600">
+    <i class="bi bi-calendar3" style="font-size:10px"></i>
+    {{ fecha_desde_f or '…' }} → {{ fecha_hasta_f or '…' }}
+  </span>
+  {% endif %}
+  <span class="text-muted" style="font-size:12px">— {{ pagination.total }} resultado{{ 's' if pagination.total != 1 }}</span>
+</div>
+{% endif %}
+
+<!-- Tabla -->
+<div class="table-container">
+  <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+    <h5 class="mb-0" style="font-size:16px">
+      <i class="bi bi-shield-check text-muted me-1" style="font-size:15px"></i>
+      Eventos de seguridad y auditoría
+    </h5>
+    <span class="text-muted" style="font-size:12px">
+      {% if not (accion_f or actor_f or ip_f or nivel_f or fecha_desde_f or fecha_hasta_f) %}
+        {{ pagination.total }} evento{{ 's' if pagination.total != 1 }} totales
+      {% else %}
+        Página {{ pagination.page }} de {{ pagination.pages }}
+      {% endif %}
+    </span>
+  </div>
+
+  {% if logs %}
+  <div class="table-responsive">
+    <table class="table table-borderless mb-0">
+      <thead>
+        <tr>
+          <th>Fecha / Hora</th>
+          <th>Actor</th>
+          <th>Acción</th>
+          <th>Nivel</th>
+          <th>IP</th>
+          <th>Objeto afectado</th>
+          <th>Detalle</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr {% if log.nivel == 'alerta' %}class="audit-alerta"{% endif %}>
+          <td style="white-space:nowrap;font-size:12.5px;color:#666">{{ log.timestamp|art }}</td>
+          <td>
+            <strong style="font-size:13px">{{ log.actor_username }}</strong>
+            {% if log.actor_id %}
+            <br><span class="text-muted" style="font-size:11px">id={{ log.actor_id }}</span>
+            {% endif %}
+          </td>
+          <td style="font-size:13px">{{ acciones_map.get(log.accion, log.accion) }}</td>
+          <td>
+            <span class="badge-estado nivel-{{ log.nivel }}" style="font-size:11.5px">
+              {% if log.nivel == 'alerta' %}<i class="bi bi-exclamation-triangle-fill me-1" style="font-size:10px"></i>{% endif %}
+              {{ log.nivel|capitalize }}
+            </span>
+          </td>
+          <td style="font-size:12.5px;color:#555;white-space:nowrap">{{ log.ip or '—' }}</td>
+          <td style="font-size:12.5px">
+            {% if log.target_label %}
+            <span>
+              {% if log.target_tipo %}<span class="text-muted" style="font-size:10.5px">{{ log.target_tipo }}: </span>{% endif %}
+              {{ log.target_label }}
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="detalle-cell">
+            {% if log.detalle %}
+            <span title="{{ log.detalle }}" style="font-size:12px;color:#555">{{ log.detalle }}</span>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginación -->
+  {% if pagination.pages > 1 %}
+  <div class="d-flex justify-content-center gap-1 p-3">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('admin.auditoria', accion=accion_f, actor_username=actor_f, ip=ip_f, nivel=nivel_f, fecha_desde=fecha_desde_f, fecha_hasta=fecha_hasta_f, page=pagination.prev_num) }}"
+       class="btn btn-sm btn-outline-secondary">‹</a>
+    {% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+      {% if p %}
+      <a href="{{ url_for('admin.auditoria', accion=accion_f, actor_username=actor_f, ip=ip_f, nivel=nivel_f, fecha_desde=fecha_desde_f, fecha_hasta=fecha_hasta_f, page=p) }}"
+         class="btn btn-sm {% if p == pagination.page %}btn-gltec{% else %}btn-outline-secondary{% endif %}">{{ p }}</a>
+      {% else %}
+      <span class="btn btn-sm disabled">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+    <a href="{{ url_for('admin.auditoria', accion=accion_f, actor_username=actor_f, ip=ip_f, nivel=nivel_f, fecha_desde=fecha_desde_f, fecha_hasta=fecha_hasta_f, page=pagination.next_num) }}"
+       class="btn btn-sm btn-outline-secondary">›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="text-center text-muted py-5">
+    <i class="bi bi-shield-check" style="font-size:40px;opacity:.3"></i>
+    <p class="mt-2" style="font-size:14px">
+      {% if accion_f or actor_f or ip_f or nivel_f or fecha_desde_f or fecha_hasta_f %}
+      No hay eventos con esos filtros.
+      {% else %}
+      No hay eventos registrados todavía.
+      {% endif %}
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

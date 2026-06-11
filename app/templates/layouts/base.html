@@ -145,6 +145,9 @@
     <a href="{{ url_for('admin.barrios') }}" class="nav-item-custom {% if 'admin.barrio' in (request.endpoint or '') %}active{% endif %}">
       <i class="bi bi-houses"></i> Barrios
     </a>
+    <a href="{{ url_for('admin.auditoria') }}" class="nav-item-custom {% if request.endpoint == 'admin.auditoria' %}active{% endif %}">
+      <i class="bi bi-shield-check"></i> Auditoría
+    </a>
     {% endif %}
     {% endif %}
 

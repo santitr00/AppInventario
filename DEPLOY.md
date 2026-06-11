@@ -48,10 +48,20 @@ ls /home/deploy/apps/InventarioGLTEC/
 
 ## 2. Paquetes apt adicionales
 
-Esta app no requiere librerías de sistema adicionales.  
-Todos los paquetes Python son puro Python (PyMySQL, openpyxl, etc.).
+La funcionalidad de **exportar PDF** usa WeasyPrint, que requiere librerías del sistema
+de renderizado de texto (Pango, Cairo y GDK-PixBuf). Sin ellas el resto de la app
+funciona normalmente, pero la ruta `/buscar/export/pdf` fallará.
 
 ```bash
+# Librerías requeridas por WeasyPrint
+sudo apt install -y \
+  libpango-1.0-0 \
+  libpangocairo-1.0-0 \
+  libpangoft2-1.0-0 \
+  libgdk-pixbuf2.0-0 \
+  libcairo2 \
+  libffi-dev
+
 # Verificar que Python 3.12 está disponible (Ubuntu 24.04 lo incluye por defecto)
 python3.12 --version
 # Esperado: Python 3.12.x
@@ -59,6 +69,11 @@ python3.12 --version
 # Solo instalar si pip falla al compilar cryptography (caso raro en Ubuntu 24.04):
 # sudo apt install python3.12-dev libssl-dev libffi-dev -y
 ```
+
+> **Nota tipografía PDF:** el template usa DM Sans cargada desde Google Fonts.
+> Si el VPS tiene salida a internet, se carga automáticamente la primera vez que
+> se genera un PDF. Sin internet, WeasyPrint cae al fallback `Arial / Helvetica`
+> sin errores.
 
 ---
 
@@ -188,12 +203,12 @@ ls -la /home/deploy/apps/appinv/app/static/
 cd /home/deploy/apps/appinv
 source venv/bin/activate
 
-# 7a. Crear las tablas con Alembic (NO usar db.create_all())
+# 7a. Crear / actualizar las tablas con Alembic (NO usar db.create_all())
 flask db upgrade
 
 # Confirmar que las tablas existen
 mysql -u invuser -p appinv -e "SHOW TABLES;"
-# Debe mostrar: barrios, categorias, historial, items, users
+# Debe mostrar: barrios, categoria_barrios, categorias, historial, items, users
 
 # 7b. Cargar datos iniciales: barrios, categorías globales y usuario admin
 # Las credenciales del admin se pasan inline — no quedan en ningún archivo persistente
@@ -211,8 +226,28 @@ python scripts/seed.py
 ```
 
 > `seed.py` es **idempotente**: podés correrlo varias veces sin duplicar datos.  
-> Si omitís `ADMIN_PASS`, el script usa el default `"admin2026"` — en ese caso cambiá
-> la contraseña inmediatamente desde el panel de admin tras el primer login.
+> Si omitís `ADMIN_PASS`, el script usa el default `"admin2026"` — cambiá
+> la contraseña desde el panel de admin tras el primer login.
+
+```bash
+# 7c. (Opcional) Cargar barrio de demo para mostrarle la app a un cliente
+python scripts/seed_ejemplo.py
+# Salida esperada:
+# ✓ Barrio: Barrio Ejemplo (id=X)
+# ✓ 5 categorías
+# ✓ 37 items cargados
+# ✓ Gestor demo creado: ejemplo / ejemplo
+#
+# Usuario demo:  ejemplo / ejemplo  (rol: gestor, ve solo su barrio)
+#
+# Para borrar el barrio demo y recrearlo desde cero:
+#   python scripts/seed_ejemplo.py --reset
+```
+
+> `seed_ejemplo.py` también es idempotente: si el barrio ya tiene items, no hace nada
+> (a menos que pases `--reset`).  
+> **Importante:** eliminá o desactivá el usuario `ejemplo` antes de pasarle el acceso
+> a un cliente real — o al menos cambiá su contraseña desde el panel de admin.
 
 ---
 
@@ -451,7 +486,7 @@ source venv/bin/activate
 # 3. Actualizar dependencias si requirements.txt cambió
 pip install -r requirements.txt
 
-# 4. Aplicar migraciones nuevas (si las hay)
+# 4. Aplicar migraciones nuevas (correrlo siempre — si no hay nada nuevo no hace daño)
 flask db upgrade
 
 # 5. Reiniciar el servicio

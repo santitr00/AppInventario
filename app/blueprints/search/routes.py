@@ -8,24 +8,13 @@ import io
 search_bp = Blueprint("search", __name__, template_folder="../../templates/search")
 
 
-@search_bp.route("/buscar")
-@login_required
-def buscar():
-    q = request.args.get("q", "").strip()
-    categoria_id = request.args.get("categoria_id", type=int)
-    estado = request.args.get("estado", "").strip()
-    ubicacion = request.args.get("ubicacion", "").strip()
-    page = request.args.get("page", 1, type=int)
-
-    categoria_sel = db.session.get(Categoria, categoria_id) if categoria_id else None
-
+def build_items_query(q, categoria_id, estado, ubicacion, user, admin_barrio_id):
     query = Item.query.filter_by(activo=True)
 
-    # Filtro por barrio
-    if not current_user.is_admin:
-        query = query.filter_by(barrio_id=current_user.barrio_id)
-    elif session.get("admin_barrio_id"):
-        query = query.filter_by(barrio_id=session.get("admin_barrio_id"))
+    if not user.is_admin:
+        query = query.filter_by(barrio_id=user.barrio_id)
+    elif admin_barrio_id:
+        query = query.filter_by(barrio_id=admin_barrio_id)
 
     if q:
         like = f"%{q}%"
@@ -48,11 +37,26 @@ def buscar():
     if ubicacion:
         query = query.filter(Item.ubicacion.ilike(f"%{ubicacion}%"))
 
-    barrio_id_filter = None
-    if not current_user.is_admin:
-        barrio_id_filter = current_user.barrio_id
-    elif session.get("admin_barrio_id"):
-        barrio_id_filter = session.get("admin_barrio_id")
+    return query
+
+
+@search_bp.route("/buscar")
+@login_required
+def buscar():
+    q = request.args.get("q", "").strip()
+    categoria_id = request.args.get("categoria_id", type=int)
+    estado = request.args.get("estado", "").strip()
+    ubicacion = request.args.get("ubicacion", "").strip()
+    page = request.args.get("page", 1, type=int)
+
+    admin_barrio_id = session.get("admin_barrio_id")
+    categoria_sel = db.session.get(Categoria, categoria_id) if categoria_id else None
+
+    query = build_items_query(q, categoria_id, estado, ubicacion, current_user, admin_barrio_id)
+
+    barrio_id_filter = None if current_user.is_admin and not admin_barrio_id else (
+        current_user.barrio_id if not current_user.is_admin else admin_barrio_id
+    )
     categorias = Categoria.visibles_para_barrio(barrio_id_filter)
     estados = [r[0] for r in db.session.query(Item.estado).distinct().all() if r[0]]
 
@@ -78,7 +82,7 @@ def buscar():
                 it.notas or "",
             ])
         # BOM utf-8 para que Excel abra con tildes correctas
-        csv_bytes = "\ufeff" + buf.getvalue()
+        csv_bytes = "﻿" + buf.getvalue()
         output = make_response(csv_bytes.encode("utf-8"))
         output.headers["Content-Disposition"] = "attachment; filename=inventario.csv"
         output.headers["Content-Type"] = "text/csv; charset=utf-8-sig"

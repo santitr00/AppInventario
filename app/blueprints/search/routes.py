@@ -48,7 +48,12 @@ def buscar():
     if ubicacion:
         query = query.filter(Item.ubicacion.ilike(f"%{ubicacion}%"))
 
-    categorias = Categoria.query.all()
+    barrio_id_filter = None
+    if not current_user.is_admin:
+        barrio_id_filter = current_user.barrio_id
+    elif session.get("admin_barrio_id"):
+        barrio_id_filter = session.get("admin_barrio_id")
+    categorias = Categoria.visibles_para_barrio(barrio_id_filter)
     estados = [r[0] for r in db.session.query(Item.estado).distinct().all() if r[0]]
 
     # ── Exportar CSV ──

@@ -52,7 +52,7 @@ def index():
         base_q = Item.query.filter_by(activo=True)
 
     total = base_q.count()
-    categorias = Categoria.query.all()
+    categorias = Categoria.visibles_para_barrio(barrio_id)
     stats_por_cat = []
     for cat in categorias:
         q = base_q.filter_by(categoria_id=cat.id)
@@ -87,7 +87,7 @@ def crear_item():
         flash("Seleccioná un barrio desde el menú superior antes de crear ítems.", "warning")
         return redirect(url_for("inventory.index"))
 
-    categorias = Categoria.query.all()
+    categorias = Categoria.visibles_para_barrio(barrio_id)
 
     if request.method == "POST":
         item = Item(
@@ -170,7 +170,8 @@ def editar_item(item_id):
         flash("Ítem no encontrado.", "warning")
         return redirect(url_for("inventory.index"))
 
-    categorias = Categoria.query.all()
+    barrio_id = get_user_barrio_id()
+    categorias = Categoria.visibles_para_barrio(barrio_id)
 
     if request.method == "POST":
         cambios = []

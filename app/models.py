@@ -80,6 +80,24 @@ class Categoria(db.Model):
     )
     items = db.relationship("Item", backref="categoria", lazy="dynamic")
 
+    @classmethod
+    def visibles_para_barrio(cls, barrio_id):
+        """Categorías visibles para un barrio: globales + asignadas a ese barrio.
+        Si barrio_id es None (admin sin barrio activo), retorna todas."""
+        if barrio_id is None:
+            return cls.query.order_by(cls.nombre).all()
+        return (
+            cls.query
+            .filter(
+                db.or_(
+                    cls.es_global == True,
+                    cls.barrios.any(id=barrio_id),
+                )
+            )
+            .order_by(cls.nombre)
+            .all()
+        )
+
     def __repr__(self):
         return f"<Categoria {self.nombre}>"
 

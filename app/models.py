@@ -153,3 +153,55 @@ class Historial(db.Model):
 
     def __repr__(self):
         return f"<Historial {self.accion} item={self.item_id}>"
+
+
+class AuditLog(db.Model):
+    __tablename__ = "audit_log"
+
+    # ── Constantes de acción ──
+    LOGIN_OK = "login_exitoso"
+    LOGIN_FAIL = "login_fallido"
+    LOGOUT = "logout"
+    ACCESO_DENEGADO = "acceso_denegado"
+    USUARIO_CREADO = "usuario_creado"
+    USUARIO_EDITADO = "usuario_editado"
+    PRIVILEGIO_CAMBIADO = "privilegio_cambiado"
+    PASSWORD_RESET = "password_reset"
+    USUARIO_ACTIVADO = "usuario_activado"
+    USUARIO_DESACTIVADO = "usuario_desactivado"
+    ITEM_BAJA = "item_baja"
+    ITEM_ELIMINADO = "item_eliminado"
+    BARRIO_CREADO = "barrio_creado"
+    BARRIO_ELIMINADO = "barrio_eliminado"
+    CATEGORIA_CREADA = "categoria_creada"
+    CATEGORIA_ELIMINADA = "categoria_eliminada"
+    EXPORT_CSV = "export_csv"
+    EXPORT_PDF = "export_pdf"
+
+    # ── Constantes de nivel ──
+    INFO = "info"
+    ADVERTENCIA = "advertencia"
+    ALERTA = "alerta"
+
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        index=True,
+    )
+    actor_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    actor_username = db.Column(db.String(80), nullable=False)
+    accion = db.Column(db.String(60), nullable=False, index=True)
+    nivel = db.Column(db.String(20), nullable=False, default="info")
+    ip = db.Column(db.String(45))
+    user_agent = db.Column(db.String(300))
+    target_tipo = db.Column(db.String(30))
+    target_id = db.Column(db.Integer)
+    target_label = db.Column(db.String(200))
+    detalle = db.Column(db.Text)
+
+    actor = db.relationship("User", foreign_keys=[actor_id])
+
+    def __repr__(self):
+        return f"<AuditLog {self.accion} by={self.actor_username}>"

@@ -102,6 +102,13 @@ def create_app():
             extra["admin_barrio_id"] = None
         return dict(current_user=current_user, **extra)
 
+    # ── Error handlers ──
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        app.logger.exception("Error 500 no controlado")
+        return "Error interno del servidor.", 500
+
     # ── Create upload folder ──
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 

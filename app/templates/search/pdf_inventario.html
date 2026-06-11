@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventario — {{ barrio_nombre }}</title>
+  <style>
+    body { font-family: sans-serif; font-size: 12px; color: #222; margin: 2cm; }
+    h1 { color: #1B4F72; margin-bottom: 4px; }
+    .meta { color: #555; margin-bottom: 16px; font-size: 11px; }
+    h2 { color: #2E86C1; border-bottom: 1px solid #2E86C1; padding-bottom: 3px; margin-top: 24px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    th { background: #1B4F72; color: white; padding: 5px 8px; text-align: left; font-size: 11px; }
+    td { padding: 4px 8px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+    .empty { text-align: center; color: #888; padding: 24px; }
+  </style>
+</head>
+<body>
+  <h1>Inventario — {{ barrio_nombre }}</h1>
+  <div class="meta">
+    Fecha: {{ fecha.strftime('%d/%m/%Y') }} &nbsp;·&nbsp; Total: {{ total }} ítem{{ 's' if total != 1 }}<br>
+    {% if filtros %}Filtros: {{ filtros | join(' · ') }}{% else %}Sin filtros — inventario completo{% endif %}
+  </div>
+
+  {% if grupos %}
+    {% for cat, items in grupos %}
+    <h2>{{ cat.nombre if cat else 'Sin categoría' }}</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th><th>Nombre</th><th>Ubicación</th><th>Estado</th><th>Cant.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.codigo or '—' }}</td>
+          <td>
+            {{ item.nombre }}
+            {% if item.marca or item.modelo %}
+            <br><small style="color:#777">{{ [item.marca, item.modelo] | select | join(' ') }}</small>
+            {% endif %}
+            {% if item.numero_serie %}
+            <br><small style="color:#777">S/N: {{ item.numero_serie }}</small>
+            {% endif %}
+            {% if item.descripcion %}
+            <br><small style="color:#999">{{ item.descripcion }}</small>
+            {% endif %}
+            {% if item.notas %}
+            <br><small style="color:#999"><em>{{ item.notas }}</em></small>
+            {% endif %}
+          </td>
+          <td>{{ item.ubicacion or '—' }}</td>
+          <td>{{ item.estado or '—' }}</td>
+          <td>{{ item.cantidad }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+  {% else %}
+  <p class="empty">No se encontraron ítems con los filtros aplicados.</p>
+  {% endif %}
+</body>
+</html>

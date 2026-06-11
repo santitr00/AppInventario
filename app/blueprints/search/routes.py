@@ -1,6 +1,9 @@
+from datetime import date
+from itertools import groupby
+
 from flask import Blueprint, render_template, request, session, make_response
 from flask_login import login_required, current_user
-from app.models import Item, Categoria
+from app.models import Item, Categoria, Barrio
 from app import db
 import csv
 import io
@@ -102,3 +105,69 @@ def buscar():
         estado_sel=estado,
         ubicacion=ubicacion,
     )
+
+
+@search_bp.route("/buscar/export/pdf")
+@login_required
+def export_pdf():
+    q = request.args.get("q", "").strip()
+    categoria_id = request.args.get("categoria_id", type=int)
+    estado = request.args.get("estado", "").strip()
+    ubicacion = request.args.get("ubicacion", "").strip()
+
+    admin_barrio_id = session.get("admin_barrio_id")
+
+    todos = build_items_query(
+        q, categoria_id, estado, ubicacion, current_user, admin_barrio_id
+    ).all()
+
+    todos.sort(key=lambda it: (
+        it.categoria.nombre.lower() if it.categoria else "\xff",
+        (it.codigo or it.nombre).lower(),
+    ))
+
+    grupos = [
+        (cat, list(its))
+        for cat, its in groupby(todos, key=lambda it: it.categoria)
+    ]
+
+    if not current_user.is_admin:
+        barrio_nombre = current_user.barrio.nombre if current_user.barrio else "—"
+    elif admin_barrio_id:
+        b = db.session.get(Barrio, admin_barrio_id)
+        barrio_nombre = b.nombre if b else "Todos los barrios"
+    else:
+        barrio_nombre = "Todos los barrios"
+
+    filtros = []
+    if q:
+        filtros.append(f'texto: "{q}"')
+    if categoria_id:
+        cat = db.session.get(Categoria, categoria_id)
+        if cat:
+            filtros.append(f"categoría: {cat.nombre}")
+    if estado:
+        filtros.append(f"estado: {estado}")
+    if ubicacion:
+        filtros.append(f"ubicación: {ubicacion}")
+
+    hoy = date.today()
+    safe_barrio = barrio_nombre.lower().replace(" ", "_").replace("/", "-")
+    filename = f"inventario_{safe_barrio}_{hoy.strftime('%Y%m%d')}.pdf"
+
+    html_str = render_template(
+        "search/pdf_inventario.html",
+        grupos=grupos,
+        barrio_nombre=barrio_nombre,
+        fecha=hoy,
+        filtros=filtros,
+        total=len(todos),
+    )
+
+    from weasyprint import HTML as WeasyHTML
+    pdf_bytes = WeasyHTML(string=html_str).write_pdf()
+
+    response = make_response(pdf_bytes)
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response

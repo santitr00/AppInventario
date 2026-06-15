@@ -98,6 +98,37 @@ class Categoria(db.Model):
             .all()
         )
 
+    def es_exclusiva_de_barrio(self, barrio_id):
+        """True si la categoría pertenece exclusivamente a ese barrio y no es global.
+        Es la única condición bajo la cual un gestor puede editarla o eliminarla."""
+        if self.es_global or barrio_id is None:
+            return False
+        return [b.id for b in self.barrios] == [barrio_id]
+
+    @classmethod
+    def nombre_disponible(cls, nombre, es_global, barrio_ids, exclude_id=None):
+        """Unicidad multi-tenant del nombre (case-insensitive, trim).
+
+        El nombre debe ser único dentro del conjunto visible de cada barrio que
+        la categoría toca (visible de un barrio = sus locales + las globales).
+        Dos categorías con el mismo nombre chocan si alguna es global, o si ambas
+        son locales y comparten al menos un barrio.
+        Retorna True si el nombre está disponible.
+        """
+        nombre_norm = (nombre or "").strip().lower()
+        if not nombre_norm:
+            return False
+        barrio_ids = set(barrio_ids or [])
+        q = cls.query.filter(db.func.lower(cls.nombre) == nombre_norm)
+        if exclude_id is not None:
+            q = q.filter(cls.id != exclude_id)
+        for otra in q.all():
+            if es_global or otra.es_global:
+                return False
+            if {b.id for b in otra.barrios} & barrio_ids:
+                return False
+        return True
+
     def __repr__(self):
         return f"<Categoria {self.nombre}>"
 

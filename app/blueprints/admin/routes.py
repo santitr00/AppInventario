@@ -188,28 +188,52 @@ def toggle_usuario(user_id):
 
 @admin_bp.route("/categorias")
 @login_required
-@admin_required
+@admin_or_gestor_required
 def categorias():
-    cats = Categoria.query.order_by(Categoria.nombre).all()
+    if current_user.is_admin:
+        cats = Categoria.query.order_by(Categoria.nombre).all()
+        return render_template("admin/categorias.html", categorias=cats)
+
+    # Gestor: solo ve las categorías visibles de su barrio.
+    if not current_user.barrio_id:
+        flash("Tu usuario no tiene un barrio asignado. Pedile al administrador que te asigne uno.", "warning")
+        return render_template("admin/categorias.html", categorias=[])
+    cats = Categoria.visibles_para_barrio(current_user.barrio_id)
     return render_template("admin/categorias.html", categorias=cats)
 
 
 @admin_bp.route("/categorias/nueva", methods=["GET", "POST"])
 @login_required
-@admin_required
+@admin_or_gestor_required
 def crear_categoria():
-    barrios = Barrio.query.filter_by(activo=True).order_by(Barrio.nombre).all()
+    es_admin = current_user.is_admin
+    barrios = Barrio.query.filter_by(activo=True).order_by(Barrio.nombre).all() if es_admin else []
+
+    if not es_admin and not current_user.barrio_id:
+        flash("Tu usuario no tiene un barrio asignado; no podés crear categorías.", "danger")
+        return redirect(url_for("admin.categorias"))
+
     if request.method == "POST":
         nombre = request.form["nombre"].strip()
-        es_global = "es_global" in request.form
-        barrio_ids = [int(bid) for bid in request.form.getlist("barrio_ids") if bid]
 
-        if not es_global and not barrio_ids:
-            flash("Seleccioná al menos un barrio o marcá la categoría como global.", "warning")
+        if es_admin:
+            es_global = "es_global" in request.form
+            barrio_ids = [int(bid) for bid in request.form.getlist("barrio_ids") if bid]
+            if not es_global and not barrio_ids:
+                flash("Seleccioná al menos un barrio o marcá la categoría como global.", "warning")
+                return render_template("admin/form_categoria.html", categoria=None, barrios=barrios)
+        else:
+            # Gestor: forzado a su barrio, nunca global. Se ignora cualquier
+            # es_global / barrio_ids que venga en el POST.
+            es_global = False
+            barrio_ids = [current_user.barrio_id]
+
+        if not nombre:
+            flash("El nombre es obligatorio.", "warning")
             return render_template("admin/form_categoria.html", categoria=None, barrios=barrios)
 
-        if Categoria.query.filter_by(nombre=nombre).first():
-            flash("Ya existe una categoría con ese nombre.", "danger")
+        if not Categoria.nombre_disponible(nombre, es_global, barrio_ids):
+            flash("Ya existe una categoría con ese nombre visible en ese barrio.", "danger")
             return render_template("admin/form_categoria.html", categoria=None, barrios=barrios)
 
         cat = Categoria(
@@ -227,7 +251,7 @@ def crear_categoria():
             target_tipo="categoria",
             target_id=cat.id,
             target_label=cat.nombre,
-            detalle=f"global={cat.es_global}",
+            detalle=f"global={cat.es_global}, barrios={barrio_ids if not cat.es_global else 'todos'}",
         )
         flash(f"Categoría '{nombre}' creada.", "success")
         return redirect(url_for("admin.categorias"))
@@ -236,28 +260,59 @@ def crear_categoria():
 
 @admin_bp.route("/categorias/<int:cat_id>/editar", methods=["GET", "POST"])
 @login_required
-@admin_required
+@admin_or_gestor_required
 def editar_categoria(cat_id):
     cat = db.session.get(Categoria, cat_id)
     if not cat:
         flash("Categoría no encontrada.", "warning")
         return redirect(url_for("admin.categorias"))
 
-    barrios = Barrio.query.filter_by(activo=True).order_by(Barrio.nombre).all()
+    es_admin = current_user.is_admin
+
+    # Gestor: solo puede tocar categorías exclusivas de su barrio (no globales,
+    # no compartidas). Bloquea el acceso por URL directa.
+    if not es_admin and not cat.es_exclusiva_de_barrio(current_user.barrio_id):
+        log_event(
+            AuditLog.ACCESO_DENEGADO,
+            nivel=AuditLog.ALERTA,
+            target_tipo="categoria",
+            target_id=cat.id,
+            target_label=cat.nombre,
+            detalle="intento de editar categoría fuera de su barrio",
+        )
+        flash("No podés editar esta categoría.", "danger")
+        return redirect(url_for("admin.categorias"))
+
+    barrios = Barrio.query.filter_by(activo=True).order_by(Barrio.nombre).all() if es_admin else []
 
     if request.method == "POST":
-        es_global = "es_global" in request.form
-        barrio_ids = [int(bid) for bid in request.form.getlist("barrio_ids") if bid]
+        nombre = request.form["nombre"].strip()
 
-        if not es_global and not barrio_ids:
-            flash("Seleccioná al menos un barrio o marcá la categoría como global.", "warning")
+        if es_admin:
+            es_global = "es_global" in request.form
+            barrio_ids = [int(bid) for bid in request.form.getlist("barrio_ids") if bid]
+            if not es_global and not barrio_ids:
+                flash("Seleccioná al menos un barrio o marcá la categoría como global.", "warning")
+                return render_template("admin/form_categoria.html", categoria=cat, barrios=barrios)
+        else:
+            es_global = False
+            barrio_ids = [current_user.barrio_id]
+
+        if not nombre:
+            flash("El nombre es obligatorio.", "warning")
             return render_template("admin/form_categoria.html", categoria=cat, barrios=barrios)
 
-        cat.nombre = request.form["nombre"].strip()
+        if not Categoria.nombre_disponible(nombre, es_global, barrio_ids, exclude_id=cat.id):
+            flash("Ya existe una categoría con ese nombre visible en ese barrio.", "danger")
+            return render_template("admin/form_categoria.html", categoria=cat, barrios=barrios)
+
+        cat.nombre = nombre
         cat.color = request.form.get("color", cat.color)
         cat.icono = request.form.get("icono", cat.icono)
-        cat.es_global = es_global
-        cat.barrios = [] if es_global else Barrio.query.filter(Barrio.id.in_(barrio_ids)).all()
+        # El gestor nunca modifica alcance: la categoría sigue siendo local de su barrio.
+        if es_admin:
+            cat.es_global = es_global
+            cat.barrios = [] if es_global else Barrio.query.filter(Barrio.id.in_(barrio_ids)).all()
         db.session.commit()
         flash("Categoría actualizada.", "success")
         return redirect(url_for("admin.categorias"))
@@ -267,25 +322,40 @@ def editar_categoria(cat_id):
 
 @admin_bp.route("/categorias/<int:cat_id>/eliminar", methods=["POST"])
 @login_required
-@admin_required
+@admin_or_gestor_required
 def eliminar_categoria(cat_id):
     cat = db.session.get(Categoria, cat_id)
-    if cat:
-        if cat.items.count() > 0:
-            flash("No podés eliminar una categoría con ítems asignados.", "danger")
-        else:
-            nombre_cat = cat.nombre
-            cat_id_log = cat.id
-            db.session.delete(cat)
-            db.session.commit()
-            log_event(
-                AuditLog.CATEGORIA_ELIMINADA,
-                nivel=AuditLog.ADVERTENCIA,
-                target_tipo="categoria",
-                target_id=cat_id_log,
-                target_label=nombre_cat,
-            )
-            flash(f"Categoría '{nombre_cat}' eliminada.", "success")
+    if not cat:
+        return redirect(url_for("admin.categorias"))
+
+    # Gestor: solo categorías exclusivas de su barrio.
+    if not current_user.is_admin and not cat.es_exclusiva_de_barrio(current_user.barrio_id):
+        log_event(
+            AuditLog.ACCESO_DENEGADO,
+            nivel=AuditLog.ALERTA,
+            target_tipo="categoria",
+            target_id=cat.id,
+            target_label=cat.nombre,
+            detalle="intento de eliminar categoría fuera de su barrio",
+        )
+        flash("No podés eliminar esta categoría.", "danger")
+        return redirect(url_for("admin.categorias"))
+
+    if cat.items.count() > 0:
+        flash("No podés eliminar una categoría con ítems asignados.", "danger")
+    else:
+        nombre_cat = cat.nombre
+        cat_id_log = cat.id
+        db.session.delete(cat)
+        db.session.commit()
+        log_event(
+            AuditLog.CATEGORIA_ELIMINADA,
+            nivel=AuditLog.ADVERTENCIA,
+            target_tipo="categoria",
+            target_id=cat_id_log,
+            target_label=nombre_cat,
+        )
+        flash(f"Categoría '{nombre_cat}' eliminada.", "success")
     return redirect(url_for("admin.categorias"))
 
 

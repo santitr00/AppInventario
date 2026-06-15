@@ -6,7 +6,9 @@
 <div class="table-container">
   <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
     <h5 class="mb-0" style="font-size:16px">Gestión de Categorías</h5>
+    {% if current_user.is_admin or current_user.barrio_id %}
     <a href="{{ url_for('admin.crear_categoria') }}" class="btn btn-sm btn-gltec"><i class="bi bi-plus-lg"></i> Nueva Categoría</a>
+    {% endif %}
   </div>
   <div class="table-responsive">
     <table class="table table-borderless mb-0">
@@ -21,22 +23,29 @@
       </thead>
       <tbody>
         {% for cat in categorias %}
+        {% set editable = current_user.is_admin or cat.es_exclusiva_de_barrio(current_user.barrio_id) %}
         <tr>
           <td>
             <span class="cat-dot" style="background:{{ cat.color }}"></span>
             <strong>{{ cat.nombre }}</strong>
             <div class="mt-1" style="margin-left:1.4em">
-              {% if cat.es_global %}
-                <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:10px">
-                  <i class="bi bi-globe2"></i> Global
-                </span>
-              {% elif cat.barrios %}
-                {% for b in cat.barrios %}
-                  <span class="badge rounded-pill" style="background:#eaf6fb;color:#1B4F72;font-size:10px">{{ b.nombre }}</span>
-                {% endfor %}
-              {% else %}
-                <span class="badge rounded-pill bg-warning bg-opacity-25 text-warning-emphasis" style="font-size:10px">
-                  <i class="bi bi-exclamation-triangle"></i> Sin barrios
+              {% if current_user.is_admin %}
+                {% if cat.es_global %}
+                  <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:10px">
+                    <i class="bi bi-globe2"></i> Global
+                  </span>
+                {% elif cat.barrios %}
+                  {% for b in cat.barrios %}
+                    <span class="badge rounded-pill" style="background:#eaf6fb;color:#1B4F72;font-size:10px">{{ b.nombre }}</span>
+                  {% endfor %}
+                {% else %}
+                  <span class="badge rounded-pill bg-warning bg-opacity-25 text-warning-emphasis" style="font-size:10px">
+                    <i class="bi bi-exclamation-triangle"></i> Sin barrios
+                  </span>
+                {% endif %}
+              {% elif not editable %}
+                <span class="badge rounded-pill" style="background:#f0f2f5;color:#888;font-size:10px">
+                  <i class="bi bi-lock"></i> Administrada por el administrador
                 </span>
               {% endif %}
             </div>
@@ -50,6 +59,7 @@
           </td>
           <td>{{ cat.items.count() }}</td>
           <td>
+            {% if editable %}
             <div class="d-flex gap-1">
               <a href="{{ url_for('admin.editar_categoria', cat_id=cat.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
               {% if cat.items.count() == 0 %}
@@ -59,6 +69,9 @@
               </form>
               {% endif %}
             </div>
+            {% else %}
+            <span class="text-muted" style="font-size:13px"><i class="bi bi-lock"></i></span>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}

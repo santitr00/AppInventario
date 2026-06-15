@@ -138,10 +138,10 @@
     <a href="{{ url_for('admin.usuarios') }}" class="nav-item-custom {% if 'admin.usuario' in (request.endpoint or '') %}active{% endif %}">
       <i class="bi bi-people"></i> Usuarios
     </a>
-    {% if current_user.is_admin %}
     <a href="{{ url_for('admin.categorias') }}" class="nav-item-custom {% if 'admin.categoria' in (request.endpoint or '') %}active{% endif %}">
       <i class="bi bi-tags"></i> Categorías
     </a>
+    {% if current_user.is_admin %}
     <a href="{{ url_for('admin.barrios') }}" class="nav-item-custom {% if 'admin.barrio' in (request.endpoint or '') %}active{% endif %}">
       <i class="bi bi-houses"></i> Barrios
     </a>

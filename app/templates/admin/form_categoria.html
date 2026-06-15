@@ -50,7 +50,8 @@
       </div>
       {% endif %}
 
-      <!-- ── Alcance ── -->
+      <!-- ── Alcance (solo admin) ── -->
+      {% if current_user.is_admin %}
       <div class="col-12">
         <hr class="my-1">
         <label class="form-label fw-semibold" style="font-size:13px">Alcance</label>
@@ -89,6 +90,7 @@
         </div>
         <div class="form-text mt-1">Si no es global, seleccioná al menos un barrio.</div>
       </div>
+      {% endif %}
 
     </div>
 
@@ -99,6 +101,7 @@
   </form>
 </div>
 
+{% if current_user.is_admin %}
 <script>
 (function () {
   var toggle = document.getElementById('es_global');
@@ -120,4 +123,5 @@
   toggle.addEventListener('change', applyState);
 })();
 </script>
+{% endif %}
 {% endblock %}

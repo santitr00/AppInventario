@@ -11,9 +11,6 @@
 {% endblock %}
 
 {% block content %}
-{% set barrios_actuales = categoria.barrios | map(attribute='id') | list if categoria else [] %}
-{% set es_global_actual = categoria.es_global if categoria else false %}
-
 <div class="card-custom p-4" style="max-width:540px">
   <form method="POST" id="form-categoria">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -50,48 +47,6 @@
       </div>
       {% endif %}
 
-      <!-- ── Alcance (solo admin) ── -->
-      {% if current_user.is_admin %}
-      <div class="col-12">
-        <hr class="my-1">
-        <label class="form-label fw-semibold" style="font-size:13px">Alcance</label>
-
-        <div class="form-check form-switch mb-2">
-          <input class="form-check-input" type="checkbox" role="switch"
-                 id="es_global" name="es_global"
-                 {% if es_global_actual %}checked{% endif %}>
-          <label class="form-check-label" for="es_global" style="font-size:13px">
-            Categoría global <span class="text-muted">(disponible en todos los barrios)</span>
-          </label>
-        </div>
-
-        <div id="barrios-group" class="p-3 rounded" style="background:#f8f9fb;{% if es_global_actual %}opacity:0.4;pointer-events:none{% endif %}">
-          <div class="fw-semibold mb-2" style="font-size:12px;color:#555">Barrios donde aplica</div>
-          {% if barrios %}
-            <div class="row g-2">
-              {% for b in barrios %}
-              <div class="col-12">
-                <div class="form-check">
-                  <input class="form-check-input barrio-check" type="checkbox"
-                         name="barrio_ids" value="{{ b.id }}"
-                         id="barrio_{{ b.id }}"
-                         {% if b.id in barrios_actuales %}checked{% endif %}
-                         {% if es_global_actual %}disabled{% endif %}>
-                  <label class="form-check-label" for="barrio_{{ b.id }}" style="font-size:13px">
-                    {{ b.nombre }}
-                  </label>
-                </div>
-              </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <p class="text-muted mb-0" style="font-size:13px">No hay barrios activos registrados.</p>
-          {% endif %}
-        </div>
-        <div class="form-text mt-1">Si no es global, seleccioná al menos un barrio.</div>
-      </div>
-      {% endif %}
-
     </div>
 
     <div class="d-flex gap-2 mt-4">
@@ -100,28 +55,4 @@
     </div>
   </form>
 </div>
-
-{% if current_user.is_admin %}
-<script>
-(function () {
-  var toggle = document.getElementById('es_global');
-  var group  = document.getElementById('barrios-group');
-  var checks = group.querySelectorAll('.barrio-check');
-
-  function applyState() {
-    if (toggle.checked) {
-      group.style.opacity = '0.4';
-      group.style.pointerEvents = 'none';
-      checks.forEach(function(cb) { cb.disabled = true; });
-    } else {
-      group.style.opacity = '1';
-      group.style.pointerEvents = '';
-      checks.forEach(function(cb) { cb.disabled = false; });
-    }
-  }
-
-  toggle.addEventListener('change', applyState);
-})();
-</script>
-{% endif %}
 {% endblock %}

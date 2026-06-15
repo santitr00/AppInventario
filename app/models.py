@@ -57,77 +57,44 @@ class User(UserMixin, db.Model):
         return f"<User {self.username} ({self.rol})>"
 
 
-categoria_barrios = db.Table(
-    "categoria_barrios",
-    db.Column("categoria_id", db.Integer, db.ForeignKey("categorias.id"), primary_key=True),
-    db.Column("barrio_id", db.Integer, db.ForeignKey("barrios.id"), primary_key=True),
-)
-
-
 class Categoria(db.Model):
     __tablename__ = "categorias"
+    __table_args__ = (
+        db.UniqueConstraint("nombre", "barrio_id", name="uq_categoria_nombre_barrio"),
+    )
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     color = db.Column(db.String(7), default="#2E86C1")
     icono = db.Column(db.String(50), default="bi-box")
-    es_global = db.Column(db.Boolean, default=False, nullable=False)
+    barrio_id = db.Column(db.Integer, db.ForeignKey("barrios.id"), nullable=False)
 
-    barrios = db.relationship(
-        "Barrio",
-        secondary=categoria_barrios,
-        lazy="subquery",
-        backref=db.backref("categorias", lazy=True),
-    )
+    barrio = db.relationship("Barrio", backref=db.backref("categorias", lazy=True))
     items = db.relationship("Item", backref="categoria", lazy="dynamic")
 
     @classmethod
     def visibles_para_barrio(cls, barrio_id):
-        """Categorías visibles para un barrio: globales + asignadas a ese barrio.
-        Si barrio_id es None (admin sin barrio activo), retorna todas."""
-        if barrio_id is None:
-            return cls.query.order_by(cls.nombre).all()
-        return (
-            cls.query
-            .filter(
-                db.or_(
-                    cls.es_global == True,
-                    cls.barrios.any(id=barrio_id),
-                )
-            )
-            .order_by(cls.nombre)
-            .all()
-        )
-
-    def es_exclusiva_de_barrio(self, barrio_id):
-        """True si la categoría pertenece exclusivamente a ese barrio y no es global.
-        Es la única condición bajo la cual un gestor puede editarla o eliminarla."""
-        if self.es_global or barrio_id is None:
-            return False
-        return [b.id for b in self.barrios] == [barrio_id]
+        """Categorías de un barrio. Si barrio_id es None (admin sin barrio
+        activo seleccionado), retorna todas las categorías de todos los barrios."""
+        q = cls.query
+        if barrio_id is not None:
+            q = q.filter_by(barrio_id=barrio_id)
+        return q.order_by(cls.nombre).all()
 
     @classmethod
-    def nombre_disponible(cls, nombre, es_global, barrio_ids, exclude_id=None):
-        """Unicidad multi-tenant del nombre (case-insensitive, trim).
-
-        El nombre debe ser único dentro del conjunto visible de cada barrio que
-        la categoría toca (visible de un barrio = sus locales + las globales).
-        Dos categorías con el mismo nombre chocan si alguna es global, o si ambas
-        son locales y comparten al menos un barrio.
-        Retorna True si el nombre está disponible.
-        """
+    def nombre_disponible(cls, nombre, barrio_id, exclude_id=None):
+        """Unicidad del nombre dentro de un barrio (case-insensitive, trim).
+        Dos barrios distintos pueden tener categorías con el mismo nombre.
+        Retorna True si el nombre está disponible en ese barrio."""
         nombre_norm = (nombre or "").strip().lower()
-        if not nombre_norm:
+        if not nombre_norm or barrio_id is None:
             return False
-        barrio_ids = set(barrio_ids or [])
-        q = cls.query.filter(db.func.lower(cls.nombre) == nombre_norm)
+        q = cls.query.filter(
+            db.func.lower(cls.nombre) == nombre_norm,
+            cls.barrio_id == barrio_id,
+        )
         if exclude_id is not None:
             q = q.filter(cls.id != exclude_id)
-        for otra in q.all():
-            if es_global or otra.es_global:
-                return False
-            if {b.id for b in otra.barrios} & barrio_ids:
-                return False
-        return True
+        return q.first() is None
 
     def __repr__(self):
         return f"<Categoria {self.nombre}>"

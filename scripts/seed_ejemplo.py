@@ -63,13 +63,10 @@ with app.app_context():
     ]
     cats = {}
     for c in cats_data:
-        obj = Categoria.query.filter_by(nombre=c["nombre"]).first()
+        obj = Categoria.query.filter_by(nombre=c["nombre"], barrio_id=barrio.id).first()
         if not obj:
-            obj = Categoria(es_global=False, **c)
-            obj.barrios.append(barrio)
+            obj = Categoria(barrio_id=barrio.id, **c)
             db.session.add(obj)
-        elif barrio not in obj.barrios:
-            obj.barrios.append(barrio)
         cats[c["nombre"]] = obj
     db.session.commit()
     print(f'✓ {len(cats)} categorías')

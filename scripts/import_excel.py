@@ -53,9 +53,9 @@ def importar(archivo, barrio_id, user_id=1):
         print("ERROR: No se encontró la columna 'nombre' en el Excel.")
         return
 
-    # Cache de categorías
+    # Cache de categorías del barrio destino (cada categoría es de un solo barrio)
     cat_cache = {}
-    for cat in Categoria.query.all():
+    for cat in Categoria.query.filter_by(barrio_id=barrio_id).all():
         cat_cache[cat.nombre.lower()] = cat.id
 
     count = 0
@@ -69,8 +69,7 @@ def importar(archivo, barrio_id, user_id=1):
         cat_nombre = str(vals[col_cat]).strip() if col_cat is not None and vals[col_cat] else "Otros"
         cat_id = cat_cache.get(cat_nombre.lower())
         if not cat_id:
-            nueva_cat = Categoria(nombre=cat_nombre, es_global=False)
-            nueva_cat.barrios = [barrio]
+            nueva_cat = Categoria(nombre=cat_nombre, barrio_id=barrio_id)
             db.session.add(nueva_cat)
             db.session.flush()
             cat_cache[cat_nombre.lower()] = nueva_cat.id

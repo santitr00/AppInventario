@@ -25,7 +25,8 @@ with app.app_context():
 
     db.session.commit()
 
-    # ── Categorías globales ──
+    # ── Categorías por barrio ──
+    # Cada categoría pertenece a un único barrio. Se siembra el mismo set en cada uno.
     categorias_data = [
         {"nombre": "Equipos de Seguridad", "color": "#2E86C1", "icono": "bi-camera-video"},
         {"nombre": "Materiales de Mantenimiento", "color": "#27AE60", "icono": "bi-tools"},
@@ -33,9 +34,11 @@ with app.app_context():
         {"nombre": "Mobiliario", "color": "#E67E22", "icono": "bi-house"},
         {"nombre": "Otros", "color": "#7F8C8D", "icono": "bi-box"},
     ]
-    for c_data in categorias_data:
-        if not Categoria.query.filter_by(nombre=c_data["nombre"]).first():
-            db.session.add(Categoria(es_global=True, **c_data))
+    for barrio in Barrio.query.all():
+        for c_data in categorias_data:
+            existe = Categoria.query.filter_by(nombre=c_data["nombre"], barrio_id=barrio.id).first()
+            if not existe:
+                db.session.add(Categoria(barrio_id=barrio.id, **c_data))
 
     db.session.commit()
 

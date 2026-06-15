@@ -1,38 +1,63 @@
 {% extends "layouts/base.html" %}
-{% block title %}{% if categoria_sel %}{{ categoria_sel.nombre }}{% else %}Búsqueda{% endif %}{% endblock %}
-{% block page_title %}{% if categoria_sel %}{{ categoria_sel.nombre }}{% else %}Búsqueda de Inventario{% endif %}{% endblock %}
+{% block title %}Búsqueda{% endblock %}
+{% block page_title %}Búsqueda de Inventario{% endblock %}
+
+{% macro filtro_dropdown(label, icon, name, opciones, seleccionados, con_color=false) %}
+<div class="dropdown">
+  <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1" type="button"
+          data-bs-toggle="dropdown" data-bs-auto-close="outside" style="min-width:150px">
+    <i class="bi {{ icon }}"></i> {{ label }}
+    {% if seleccionados %}<span class="badge rounded-pill bg-primary ms-auto">{{ seleccionados|length }}</span>{% endif %}
+  </button>
+  <ul class="dropdown-menu p-1" style="max-height:280px;overflow:auto;min-width:230px">
+    {% if opciones %}
+      {% for o in opciones %}
+      <li>
+        <label class="dropdown-item d-flex align-items-center gap-2 rounded" style="cursor:pointer;font-size:13px">
+          <input class="form-check-input mt-0" type="checkbox" name="{{ name }}" value="{{ o.id }}"
+                 {% if o.id in seleccionados %}checked{% endif %}>
+          {% if con_color %}<span class="cat-dot" style="background:{{ o.color }}"></span>{% endif %}
+          {{ o.nombre }}
+        </label>
+      </li>
+      {% endfor %}
+    {% else %}
+      <li><span class="dropdown-item-text text-muted" style="font-size:12px">Sin opciones en este barrio</span></li>
+    {% endif %}
+  </ul>
+</div>
+{% endmacro %}
 
 {% block content %}
+{% set hay_filtros = q or categoria_ids or area_ids or ubicacion_ids or estado_sel %}
+
 <!-- Search box -->
 <div class="card-custom p-4 mb-4">
   <form method="GET" action="{{ url_for('search.buscar') }}">
     <div class="d-flex gap-2 mb-3">
       <div class="flex-grow-1 position-relative">
         <i class="bi bi-search position-absolute" style="left:14px;top:12px;color:#999"></i>
-        <input type="text" name="q" class="form-control" style="padding-left:40px" value="{{ q }}" placeholder="Buscar por nombre, marca, modelo, número de serie...">
+        <input type="text" name="q" class="form-control" style="padding-left:40px" value="{{ q }}" placeholder="Buscar por nombre, código, marca, modelo, número de serie...">
       </div>
       <button type="submit" class="btn btn-gltec px-4">Buscar</button>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <select name="categoria_id" class="form-select form-select-sm" style="max-width:200px">
-        <option value="">Todas las categorías</option>
-        {% for cat in categorias %}
-        <option value="{{ cat.id }}" {% if categoria_id == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
-        {% endfor %}
-      </select>
-      <select name="estado" class="form-select form-select-sm" style="max-width:200px">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      {{ filtro_dropdown('Categorías', 'bi-tags', 'categoria_id', categorias, categoria_ids, con_color=true) }}
+      {{ filtro_dropdown('Áreas', 'bi-grid-3x3-gap', 'area_id', areas, area_ids) }}
+      {{ filtro_dropdown('Ubicaciones', 'bi-geo-alt', 'ubicacion_id', ubicaciones, ubicacion_ids) }}
+      <select name="estado" class="form-select form-select-sm" style="max-width:190px">
         <option value="">Todos los estados</option>
         {% for e in estados %}
         <option {% if estado_sel == e %}selected{% endif %}>{{ e }}</option>
         {% endfor %}
       </select>
-      <input type="text" name="ubicacion" class="form-control form-control-sm" style="max-width:200px" value="{{ ubicacion }}" placeholder="Ubicación...">
+      <span class="text-muted" style="font-size:12px">Podés elegir varias y aplicá con <strong>Buscar</strong>.</span>
     </div>
   </form>
 </div>
 
 <!-- Results info -->
-{% if q or categoria_id or estado_sel or ubicacion %}
+{% if hay_filtros %}
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
   <span style="font-size:13.5px" class="text-muted">
     Se encontraron <strong style="color:#1B4F72">{{ pagination.total }}</strong> resultado{{ 's' if pagination.total != 1 }}
@@ -41,28 +66,35 @@
   <div class="d-flex gap-2 align-items-center flex-wrap">
     {% if q %}
     <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
-      {{ q }}
-      <a href="{{ url_for('search.buscar', categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+      <i class="bi bi-search" style="font-size:10px"></i> {{ q }}
+      <a href="{{ url_for('search.buscar', categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
     </span>
     {% endif %}
-    {% if categoria_id and categoria_sel %}
+    {% for c in categorias if c.id in categoria_ids %}
     <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
-      <span class="cat-dot" style="background:{{ categoria_sel.color }}"></span>{{ categoria_sel.nombre }}
-      <a href="{{ url_for('search.buscar', q=q, estado=estado_sel, ubicacion=ubicacion) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+      <span class="cat-dot" style="background:{{ c.color }}"></span>{{ c.nombre }}
+      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids|reject('equalto', c.id)|list, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
     </span>
-    {% endif %}
+    {% endfor %}
+    {% for a in areas if a.id in area_ids %}
+    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+      <i class="bi bi-grid-3x3-gap" style="font-size:10px"></i> {{ a.nombre }}
+      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids|reject('equalto', a.id)|list, ubicacion_id=ubicacion_ids, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+    </span>
+    {% endfor %}
+    {% for u in ubicaciones if u.id in ubicacion_ids %}
+    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+      <i class="bi bi-geo-alt" style="font-size:10px"></i> {{ u.nombre }}
+      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids|reject('equalto', u.id)|list, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+    </span>
+    {% endfor %}
     {% if estado_sel %}
     <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
       {{ estado_sel }}
-      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, ubicacion=ubicacion) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
     </span>
     {% endif %}
-    {% if ubicacion %}
-    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
-      <i class="bi bi-geo-alt" style="font-size:10px"></i> {{ ubicacion }}
-      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
-    </span>
-    {% endif %}
+    <a href="{{ url_for('search.buscar') }}" class="text-decoration-none" style="font-size:12px;color:#888">Limpiar todo</a>
   </div>
 </div>
 {% endif %}
@@ -71,10 +103,10 @@
 <div class="table-container">
   {% if items %}
   <div class="d-flex justify-content-end gap-2 p-2 border-bottom">
-    <a href="{{ url_for('search.export_pdf', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion) }}" class="btn btn-sm btn-outline-secondary">
+    <a href="{{ url_for('search.export_pdf', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel) }}" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-filetype-pdf"></i> Exportar PDF
     </a>
-    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, format='csv') }}" class="btn btn-sm btn-outline-secondary">
+    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel, format='csv') }}" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-download"></i> Exportar CSV
     </a>
   </div>
@@ -142,18 +174,18 @@
   {% if pagination.pages > 1 %}
   <div class="d-flex justify-content-center gap-1 p-3">
     {% if pagination.has_prev %}
-    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, page=pagination.prev_num) }}" class="btn btn-sm btn-outline-secondary">‹</a>
+    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel, page=pagination.prev_num) }}" class="btn btn-sm btn-outline-secondary">‹</a>
     {% endif %}
     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
       {% if p %}
-        <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, page=p) }}"
+        <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel, page=p) }}"
            class="btn btn-sm {% if p == pagination.page %}btn-gltec{% else %}btn-outline-secondary{% endif %}">{{ p }}</a>
       {% else %}
         <span class="btn btn-sm disabled">…</span>
       {% endif %}
     {% endfor %}
     {% if pagination.has_next %}
-    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_id, estado=estado_sel, ubicacion=ubicacion, page=pagination.next_num) }}" class="btn btn-sm btn-outline-secondary">›</a>
+    <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel, page=pagination.next_num) }}" class="btn btn-sm btn-outline-secondary">›</a>
     {% endif %}
   </div>
   {% endif %}
@@ -162,7 +194,7 @@
   <div class="text-center text-muted py-5">
     <i class="bi bi-search" style="font-size:40px"></i>
     <p class="mt-2">
-      {% if q or categoria_id or estado_sel or ubicacion %}
+      {% if hay_filtros %}
       No se encontraron resultados con esos filtros.
       {% else %}
       Usá el buscador para encontrar ítems del inventario.

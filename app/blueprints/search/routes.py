@@ -3,7 +3,7 @@ from itertools import groupby
 
 from flask import Blueprint, render_template, request, session, make_response
 from flask_login import login_required, current_user
-from app.models import Item, Categoria, Ubicacion, Barrio, AuditLog
+from app.models import Item, Categoria, Area, Ubicacion, Barrio, AuditLog
 from app.audit import log_event
 from app import db
 import csv
@@ -12,7 +12,7 @@ import io
 search_bp = Blueprint("search", __name__, template_folder="../../templates/search")
 
 
-def build_items_query(q, categoria_id, estado, ubicacion, user, admin_barrio_id):
+def build_items_query(q, categoria_ids, estado, area_ids, ubicacion_ids, user, admin_barrio_id):
     query = Item.query
 
     if not user.is_admin:
@@ -34,12 +34,16 @@ def build_items_query(q, categoria_id, estado, ubicacion, user, admin_barrio_id)
             )
         )
 
-    if categoria_id:
-        query = query.filter_by(categoria_id=categoria_id)
+    # Filtros multi-valor: cada uno acepta varias selecciones (OR dentro del campo,
+    # AND entre campos).
+    if categoria_ids:
+        query = query.filter(Item.categoria_id.in_(categoria_ids))
     if estado:
         query = query.filter_by(estado=estado)
-    if ubicacion:
-        query = query.filter(Item.ubicacion.has(Ubicacion.nombre.ilike(f"%{ubicacion}%")))
+    if area_ids:
+        query = query.filter(Item.area_id.in_(area_ids))
+    if ubicacion_ids:
+        query = query.filter(Item.ubicacion_id.in_(ubicacion_ids))
 
     return query
 
@@ -48,20 +52,22 @@ def build_items_query(q, categoria_id, estado, ubicacion, user, admin_barrio_id)
 @login_required
 def buscar():
     q = request.args.get("q", "").strip()
-    categoria_id = request.args.get("categoria_id", type=int)
+    categoria_ids = request.args.getlist("categoria_id", type=int)
+    area_ids = request.args.getlist("area_id", type=int)
+    ubicacion_ids = request.args.getlist("ubicacion_id", type=int)
     estado = request.args.get("estado", "").strip()
-    ubicacion = request.args.get("ubicacion", "").strip()
     page = request.args.get("page", 1, type=int)
 
     admin_barrio_id = session.get("admin_barrio_id")
-    categoria_sel = db.session.get(Categoria, categoria_id) if categoria_id else None
 
-    query = build_items_query(q, categoria_id, estado, ubicacion, current_user, admin_barrio_id)
+    query = build_items_query(q, categoria_ids, estado, area_ids, ubicacion_ids, current_user, admin_barrio_id)
 
     barrio_id_filter = None if current_user.is_admin and not admin_barrio_id else (
         current_user.barrio_id if not current_user.is_admin else admin_barrio_id
     )
     categorias = Categoria.visibles_para_barrio(barrio_id_filter)
+    areas = Area.visibles_para_barrio(barrio_id_filter)
+    ubicaciones = Ubicacion.visibles_para_barrio(barrio_id_filter)
     estados = [r[0] for r in db.session.query(Item.estado).distinct().all() if r[0]]
 
     # ── Exportar CSV ──
@@ -93,9 +99,10 @@ def buscar():
         output.headers["Content-Type"] = "text/csv; charset=utf-8-sig"
         filtros_str = ", ".join(filter(None, [
             f"q={q!r}" if q else "",
-            f"categoria_id={categoria_id}" if categoria_id else "",
+            f"categorias={categoria_ids}" if categoria_ids else "",
             f"estado={estado!r}" if estado else "",
-            f"ubicacion={ubicacion!r}" if ubicacion else "",
+            f"areas={area_ids}" if area_ids else "",
+            f"ubicaciones={ubicacion_ids}" if ubicacion_ids else "",
         ])) or "ninguno"
         log_event(
             AuditLog.EXPORT_CSV,
@@ -110,12 +117,14 @@ def buscar():
         items=pagination.items,
         pagination=pagination,
         categorias=categorias,
+        areas=areas,
+        ubicaciones=ubicaciones,
         estados=estados,
         q=q,
-        categoria_id=categoria_id,
-        categoria_sel=categoria_sel,
+        categoria_ids=categoria_ids,
+        area_ids=area_ids,
+        ubicacion_ids=ubicacion_ids,
         estado_sel=estado,
-        ubicacion=ubicacion,
     )
 
 
@@ -123,14 +132,15 @@ def buscar():
 @login_required
 def export_pdf():
     q = request.args.get("q", "").strip()
-    categoria_id = request.args.get("categoria_id", type=int)
+    categoria_ids = request.args.getlist("categoria_id", type=int)
+    area_ids = request.args.getlist("area_id", type=int)
+    ubicacion_ids = request.args.getlist("ubicacion_id", type=int)
     estado = request.args.get("estado", "").strip()
-    ubicacion = request.args.get("ubicacion", "").strip()
 
     admin_barrio_id = session.get("admin_barrio_id")
 
     todos = build_items_query(
-        q, categoria_id, estado, ubicacion, current_user, admin_barrio_id
+        q, categoria_ids, estado, area_ids, ubicacion_ids, current_user, admin_barrio_id
     ).all()
 
     todos.sort(key=lambda it: (
@@ -154,14 +164,17 @@ def export_pdf():
     filtros = []
     if q:
         filtros.append(f'texto: "{q}"')
-    if categoria_id:
-        cat = db.session.get(Categoria, categoria_id)
-        if cat:
-            filtros.append(f"categoría: {cat.nombre}")
+    if categoria_ids:
+        cats = Categoria.query.filter(Categoria.id.in_(categoria_ids)).all()
+        filtros.append("categorías: " + ", ".join(c.nombre for c in cats))
     if estado:
         filtros.append(f"estado: {estado}")
-    if ubicacion:
-        filtros.append(f"ubicación: {ubicacion}")
+    if area_ids:
+        areas = Area.query.filter(Area.id.in_(area_ids)).all()
+        filtros.append("áreas: " + ", ".join(a.nombre for a in areas))
+    if ubicacion_ids:
+        ubis = Ubicacion.query.filter(Ubicacion.id.in_(ubicacion_ids)).all()
+        filtros.append("ubicaciones: " + ", ".join(u.nombre for u in ubis))
 
     hoy = date.today()
     safe_barrio = barrio_nombre.lower().replace(" ", "_").replace("/", "-")

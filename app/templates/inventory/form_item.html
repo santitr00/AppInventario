@@ -60,9 +60,24 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-4">
-        <label class="form-label fw-semibold" style="font-size:13px">Ubicación</label>
-        <input type="text" name="ubicacion" class="form-control" value="{{ item.ubicacion if item else '' }}" placeholder="Ej: Depósito central">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold" style="font-size:13px">Área <span class="text-muted fw-normal">(opcional)</span></label>
+        <select name="area_id" class="form-select">
+          <option value="">— General del barrio —</option>
+          {% for a in areas %}
+          <option value="{{ a.id }}" {% if item and item.area_id == a.id %}selected{% endif %}>{{ a.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold" style="font-size:13px">Ubicación <span class="text-muted fw-normal">(opcional)</span></label>
+        <select name="ubicacion_id" class="form-select">
+          <option value="">— Sin especificar —</option>
+          {% for u in ubicaciones %}
+          <option value="{{ u.id }}" {% if item and item.ubicacion_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-text">Se gestionan en <a href="{{ url_for('admin.catalogos', seccion='ubicaciones') }}">Catálogos</a>.</div>
       </div>
       <div class="col-md-3">
         <label class="form-label fw-semibold" style="font-size:13px">Estado</label>

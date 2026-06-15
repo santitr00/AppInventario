@@ -286,7 +286,7 @@
             <div class="item-desc">Notas: {{ item.notas }}</div>
             {%- endif -%}
           </td>
-          <td class="td-ubicacion">{{ item.ubicacion or '—' }}</td>
+          <td class="td-ubicacion">{{ item.ubicacion_nombre or '—' }}</td>
           <td>
             {% if   'operat'   in el %}<span class="badge badge-operativo">{{ item.estado }}</span>
             {% elif 'bajo'     in el %}<span class="badge badge-stock-bajo">{{ item.estado }}</span>

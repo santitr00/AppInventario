@@ -1,0 +1,60 @@
+{% extends "layouts/base.html" %}
+{% block title %}{% if fila %}Editar{% else %}Nueva{% endif %} {{ cfg.singular }}{% endblock %}
+{% block page_title %}{% if fila %}Editar{% else %}Nueva{% endif %} {{ cfg.singular }}{% endblock %}
+
+{% block breadcrumb %}
+<nav style="font-size:13px" class="mb-1">
+  <a href="{{ url_for('admin.catalogos', seccion=seccion) }}" class="text-decoration-none" style="color:#2E86C1">{{ cfg.plural }}</a>
+  <span class="text-muted">›</span>
+  <span class="text-muted">{% if fila %}Editar{% else %}Nueva{% endif %}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="card-custom p-4" style="max-width:540px">
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+
+      <div class="col-12">
+        <label class="form-label fw-semibold" style="font-size:13px">Nombre *</label>
+        <input type="text" name="nombre" class="form-control" value="{{ fila.nombre if fila else '' }}" required placeholder="Ej: {{ cfg.singular }}…">
+      </div>
+
+      {% if cfg.tiene_estilo %}
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" style="font-size:13px">Color</label>
+        <div class="d-flex gap-2 align-items-center">
+          <input type="color" name="color" class="form-control form-control-color" value="{{ fila.color if fila else '#2E86C1' }}" style="width:50px">
+          <span class="text-muted" style="font-size:12px">Indicador de color</span>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label fw-semibold" style="font-size:13px">Icono Bootstrap</label>
+        <input type="text" name="icono" class="form-control" value="{{ fila.icono if fila else 'bi-box' }}" placeholder="bi-box">
+        <div class="form-text">Clase de Bootstrap Icons. <a href="https://icons.getbootstrap.com" target="_blank">Ver iconos</a></div>
+      </div>
+
+      {% if fila %}
+      <div class="col-12">
+        <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#f8f9fb">
+          <i class="bi {{ fila.icono }}" style="font-size:28px;color:{{ fila.color }}"></i>
+          <div>
+            <div style="font-weight:600;font-size:15px">{{ fila.nombre }}</div>
+            <div class="text-muted" style="font-size:12px">Vista previa actual</div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-gltec"><i class="bi bi-check-lg"></i> {% if fila %}Guardar{% else %}Crear{% endif %}</button>
+      <a href="{{ url_for('admin.catalogos', seccion=seccion) }}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

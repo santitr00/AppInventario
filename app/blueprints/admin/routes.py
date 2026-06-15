@@ -2,13 +2,34 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from app.models import User, Barrio, Categoria, AuditLog
+from app.models import User, Barrio, Categoria, Area, Ubicacion, AuditLog
 from app.audit import log_event
 from app.blueprints.inventory.routes import get_user_barrio_id
 from app import db
 from functools import wraps
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin", template_folder="../../templates/admin")
+
+# Catálogos por barrio gestionados de forma idéntica (CRUD genérico con pestañas).
+# 'tiene_estilo' = la entidad tiene color/icono (solo categorías).
+CATALOGOS = {
+    "categorias": {
+        "model": Categoria, "singular": "Categoría", "plural": "Categorías",
+        "tiene_estilo": True, "target_tipo": "categoria",
+        "audit_crear": AuditLog.CATEGORIA_CREADA, "audit_eliminar": AuditLog.CATEGORIA_ELIMINADA,
+    },
+    "areas": {
+        "model": Area, "singular": "Área", "plural": "Áreas",
+        "tiene_estilo": False, "target_tipo": "area",
+        "audit_crear": AuditLog.AREA_CREADA, "audit_eliminar": AuditLog.AREA_ELIMINADA,
+    },
+    "ubicaciones": {
+        "model": Ubicacion, "singular": "Ubicación", "plural": "Ubicaciones",
+        "tiene_estilo": False, "target_tipo": "ubicacion",
+        "audit_crear": AuditLog.UBICACION_CREADA, "audit_eliminar": AuditLog.UBICACION_ELIMINADA,
+    },
+}
+CATALOGOS_TABS = [(s, CATALOGOS[s]["plural"]) for s in ("categorias", "areas", "ubicaciones")]
 
 # Categorías sembradas automáticamente al crear un barrio, para que ningún
 # gestor arranque sin nada. Después puede editarlas/eliminarlas a gusto.
@@ -36,6 +57,10 @@ AUDIT_ACCIONES = [
     (AuditLog.BARRIO_ELIMINADO,    "Barrio eliminado"),
     (AuditLog.CATEGORIA_CREADA,    "Categoría creada"),
     (AuditLog.CATEGORIA_ELIMINADA, "Categoría eliminada"),
+    (AuditLog.AREA_CREADA,         "Área creada"),
+    (AuditLog.AREA_ELIMINADA,      "Área eliminada"),
+    (AuditLog.UBICACION_CREADA,    "Ubicación creada"),
+    (AuditLog.UBICACION_ELIMINADA, "Ubicación eliminada"),
     (AuditLog.EXPORT_CSV,          "Exportación CSV"),
     (AuditLog.EXPORT_PDF,          "Exportación PDF"),
 ]
@@ -196,144 +221,178 @@ def toggle_usuario(user_id):
     return redirect(url_for("admin.usuarios"))
 
 
-@admin_bp.route("/categorias")
+def _get_catalogo(seccion):
+    """Devuelve la config del catálogo o None si la sección no es válida."""
+    return CATALOGOS.get(seccion)
+
+
+@admin_bp.route("/catalogos")
 @login_required
 @admin_or_gestor_required
-def categorias():
+def catalogos_home():
+    return redirect(url_for("admin.catalogos", seccion="categorias"))
+
+
+@admin_bp.route("/catalogos/<seccion>")
+@login_required
+@admin_or_gestor_required
+def catalogos(seccion):
+    cfg = _get_catalogo(seccion)
+    if not cfg:
+        return redirect(url_for("admin.catalogos", seccion="categorias"))
+
     barrio_id = get_user_barrio_id()
     if barrio_id is None and not current_user.is_admin:
         flash("Tu usuario no tiene un barrio asignado. Pedile al administrador que te asigne uno.", "warning")
-        return render_template("admin/categorias.html", categorias=[])
-    # Admin sin barrio seleccionado ("Todos los barrios") ve todas; con barrio
-    # seleccionado, solo ese. El gestor ve únicamente las de su barrio.
-    cats = Categoria.visibles_para_barrio(barrio_id)
-    return render_template("admin/categorias.html", categorias=cats)
+        filas = []
+    else:
+        # Admin sin barrio ("Todos los barrios") ve todo; con barrio, solo ese.
+        # El gestor ve únicamente las de su barrio.
+        filas = cfg["model"].visibles_para_barrio(barrio_id)
+
+    return render_template(
+        "admin/catalogos.html",
+        seccion=seccion, cfg=cfg, tabs=CATALOGOS_TABS, filas=filas,
+    )
 
 
-@admin_bp.route("/categorias/nueva", methods=["GET", "POST"])
+@admin_bp.route("/catalogos/<seccion>/nueva", methods=["GET", "POST"])
 @login_required
 @admin_or_gestor_required
-def crear_categoria():
+def catalogo_nuevo(seccion):
+    cfg = _get_catalogo(seccion)
+    if not cfg:
+        return redirect(url_for("admin.catalogos", seccion="categorias"))
+
     barrio_id = get_user_barrio_id()
     if barrio_id is None:
         if current_user.is_admin:
-            flash("Seleccioná un barrio desde el menú superior antes de crear categorías.", "warning")
+            flash(f"Seleccioná un barrio desde el menú superior antes de crear {cfg['plural'].lower()}.", "warning")
         else:
-            flash("Tu usuario no tiene un barrio asignado; no podés crear categorías.", "danger")
-        return redirect(url_for("admin.categorias"))
+            flash("Tu usuario no tiene un barrio asignado; no podés crear.", "danger")
+        return redirect(url_for("admin.catalogos", seccion=seccion))
 
+    Model = cfg["model"]
     if request.method == "POST":
         nombre = request.form["nombre"].strip()
 
         if not nombre:
             flash("El nombre es obligatorio.", "warning")
-            return render_template("admin/form_categoria.html", categoria=None)
+            return render_template("admin/form_catalogo.html", seccion=seccion, cfg=cfg, fila=None)
 
-        if not Categoria.nombre_disponible(nombre, barrio_id):
-            flash("Ya existe una categoría con ese nombre en este barrio.", "danger")
-            return render_template("admin/form_categoria.html", categoria=None)
+        if not Model.nombre_disponible(nombre, barrio_id):
+            flash(f"Ya existe {cfg['singular'].lower()} con ese nombre en este barrio.", "danger")
+            return render_template("admin/form_catalogo.html", seccion=seccion, cfg=cfg, fila=None)
 
-        cat = Categoria(
-            nombre=nombre,
-            color=request.form.get("color", "#2E86C1"),
-            icono=request.form.get("icono", "bi-box"),
-            barrio_id=barrio_id,
-        )
-        db.session.add(cat)
+        fila = Model(nombre=nombre, barrio_id=barrio_id)
+        if cfg["tiene_estilo"]:
+            fila.color = request.form.get("color", "#2E86C1")
+            fila.icono = request.form.get("icono", "bi-box")
+        db.session.add(fila)
         db.session.commit()
         log_event(
-            AuditLog.CATEGORIA_CREADA,
-            target_tipo="categoria",
-            target_id=cat.id,
-            target_label=cat.nombre,
+            cfg["audit_crear"],
+            target_tipo=cfg["target_tipo"],
+            target_id=fila.id,
+            target_label=fila.nombre,
             detalle=f"barrio_id={barrio_id}",
         )
-        flash(f"Categoría '{nombre}' creada.", "success")
-        return redirect(url_for("admin.categorias"))
-    return render_template("admin/form_categoria.html", categoria=None)
+        flash(f"{cfg['singular']} '{nombre}' creada.", "success")
+        return redirect(url_for("admin.catalogos", seccion=seccion))
+
+    return render_template("admin/form_catalogo.html", seccion=seccion, cfg=cfg, fila=None)
 
 
-@admin_bp.route("/categorias/<int:cat_id>/editar", methods=["GET", "POST"])
+@admin_bp.route("/catalogos/<seccion>/<int:item_id>/editar", methods=["GET", "POST"])
 @login_required
 @admin_or_gestor_required
-def editar_categoria(cat_id):
-    cat = db.session.get(Categoria, cat_id)
-    if not cat:
-        flash("Categoría no encontrada.", "warning")
-        return redirect(url_for("admin.categorias"))
+def catalogo_editar(seccion, item_id):
+    cfg = _get_catalogo(seccion)
+    if not cfg:
+        return redirect(url_for("admin.catalogos", seccion="categorias"))
 
-    # Gestor: solo categorías de su propio barrio. Bloquea acceso por URL directa.
-    if not current_user.is_admin and cat.barrio_id != current_user.barrio_id:
+    fila = db.session.get(cfg["model"], item_id)
+    if not fila:
+        flash("Elemento no encontrado.", "warning")
+        return redirect(url_for("admin.catalogos", seccion=seccion))
+
+    # Gestor: solo lo de su propio barrio. Bloquea acceso por URL directa.
+    if not current_user.is_admin and fila.barrio_id != current_user.barrio_id:
         log_event(
             AuditLog.ACCESO_DENEGADO,
             nivel=AuditLog.ALERTA,
-            target_tipo="categoria",
-            target_id=cat.id,
-            target_label=cat.nombre,
-            detalle="intento de editar categoría de otro barrio",
+            target_tipo=cfg["target_tipo"],
+            target_id=fila.id,
+            target_label=fila.nombre,
+            detalle=f"intento de editar {cfg['target_tipo']} de otro barrio",
         )
-        flash("No podés editar esta categoría.", "danger")
-        return redirect(url_for("admin.categorias"))
+        flash("No podés editar este elemento.", "danger")
+        return redirect(url_for("admin.catalogos", seccion=seccion))
 
     if request.method == "POST":
         nombre = request.form["nombre"].strip()
 
         if not nombre:
             flash("El nombre es obligatorio.", "warning")
-            return render_template("admin/form_categoria.html", categoria=cat)
+            return render_template("admin/form_catalogo.html", seccion=seccion, cfg=cfg, fila=fila)
 
-        if not Categoria.nombre_disponible(nombre, cat.barrio_id, exclude_id=cat.id):
-            flash("Ya existe una categoría con ese nombre en este barrio.", "danger")
-            return render_template("admin/form_categoria.html", categoria=cat)
+        if not cfg["model"].nombre_disponible(nombre, fila.barrio_id, exclude_id=fila.id):
+            flash(f"Ya existe {cfg['singular'].lower()} con ese nombre en este barrio.", "danger")
+            return render_template("admin/form_catalogo.html", seccion=seccion, cfg=cfg, fila=fila)
 
-        # El barrio de una categoría no se cambia desde acá (se recrea si hace falta).
-        cat.nombre = nombre
-        cat.color = request.form.get("color", cat.color)
-        cat.icono = request.form.get("icono", cat.icono)
+        # El barrio no se cambia desde acá (se recrea si hace falta).
+        fila.nombre = nombre
+        if cfg["tiene_estilo"]:
+            fila.color = request.form.get("color", fila.color)
+            fila.icono = request.form.get("icono", fila.icono)
         db.session.commit()
-        flash("Categoría actualizada.", "success")
-        return redirect(url_for("admin.categorias"))
+        flash(f"{cfg['singular']} actualizada.", "success")
+        return redirect(url_for("admin.catalogos", seccion=seccion))
 
-    return render_template("admin/form_categoria.html", categoria=cat)
+    return render_template("admin/form_catalogo.html", seccion=seccion, cfg=cfg, fila=fila)
 
 
-@admin_bp.route("/categorias/<int:cat_id>/eliminar", methods=["POST"])
+@admin_bp.route("/catalogos/<seccion>/<int:item_id>/eliminar", methods=["POST"])
 @login_required
 @admin_or_gestor_required
-def eliminar_categoria(cat_id):
-    cat = db.session.get(Categoria, cat_id)
-    if not cat:
-        return redirect(url_for("admin.categorias"))
+def catalogo_eliminar(seccion, item_id):
+    cfg = _get_catalogo(seccion)
+    if not cfg:
+        return redirect(url_for("admin.catalogos", seccion="categorias"))
 
-    # Gestor: solo categorías de su propio barrio.
-    if not current_user.is_admin and cat.barrio_id != current_user.barrio_id:
+    fila = db.session.get(cfg["model"], item_id)
+    if not fila:
+        return redirect(url_for("admin.catalogos", seccion=seccion))
+
+    # Gestor: solo lo de su propio barrio.
+    if not current_user.is_admin and fila.barrio_id != current_user.barrio_id:
         log_event(
             AuditLog.ACCESO_DENEGADO,
             nivel=AuditLog.ALERTA,
-            target_tipo="categoria",
-            target_id=cat.id,
-            target_label=cat.nombre,
-            detalle="intento de eliminar categoría de otro barrio",
+            target_tipo=cfg["target_tipo"],
+            target_id=fila.id,
+            target_label=fila.nombre,
+            detalle=f"intento de eliminar {cfg['target_tipo']} de otro barrio",
         )
-        flash("No podés eliminar esta categoría.", "danger")
-        return redirect(url_for("admin.categorias"))
+        flash("No podés eliminar este elemento.", "danger")
+        return redirect(url_for("admin.catalogos", seccion=seccion))
 
-    if cat.items.count() > 0:
-        flash("No podés eliminar una categoría con ítems asignados.", "danger")
+    if fila.items.count() > 0:
+        flash(f"No podés eliminar {cfg['singular'].lower()} con ítems asignados.", "danger")
     else:
-        nombre_cat = cat.nombre
-        cat_id_log = cat.id
-        db.session.delete(cat)
+        nombre = fila.nombre
+        fila_id_log = fila.id
+        db.session.delete(fila)
         db.session.commit()
         log_event(
-            AuditLog.CATEGORIA_ELIMINADA,
+            cfg["audit_eliminar"],
             nivel=AuditLog.ADVERTENCIA,
-            target_tipo="categoria",
-            target_id=cat_id_log,
-            target_label=nombre_cat,
+            target_tipo=cfg["target_tipo"],
+            target_id=fila_id_log,
+            target_label=nombre,
         )
-        flash(f"Categoría '{nombre_cat}' eliminada.", "success")
-    return redirect(url_for("admin.categorias"))
+        flash(f"{cfg['singular']} '{nombre}' eliminada.", "success")
+    return redirect(url_for("admin.catalogos", seccion=seccion))
 
 
 @admin_bp.route("/barrios")

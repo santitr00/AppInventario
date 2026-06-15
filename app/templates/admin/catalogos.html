@@ -1,0 +1,82 @@
+{% extends "layouts/base.html" %}
+{% block title %}Catálogos{% endblock %}
+{% block page_title %}Catálogos{% endblock %}
+
+{% block content %}
+<div class="table-container">
+  <!-- ── Pestañas ── -->
+  <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+    <ul class="nav nav-pills gap-1" style="font-size:13px">
+      {% for s, label in tabs %}
+      <li class="nav-item">
+        <a class="nav-link py-1 px-3 {% if s == seccion %}active{% endif %}"
+           style="{% if s == seccion %}background:#1B4F72{% else %}color:#1B4F72{% endif %}"
+           href="{{ url_for('admin.catalogos', seccion=s) }}">{{ label }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if current_user.is_admin or current_user.barrio_id %}
+    <a href="{{ url_for('admin.catalogo_nuevo', seccion=seccion) }}" class="btn btn-sm btn-gltec">
+      <i class="bi bi-plus-lg"></i> Nueva {{ cfg.singular }}
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-borderless mb-0">
+      <thead>
+        <tr>
+          <th>{{ cfg.singular }}</th>
+          {% if cfg.tiene_estilo %}<th>Icono</th><th>Color</th>{% endif %}
+          <th>Ítems</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in filas %}
+        <tr>
+          <td>
+            {% if cfg.tiene_estilo %}<span class="cat-dot" style="background:{{ fila.color }}"></span>{% endif %}
+            <strong>{{ fila.nombre }}</strong>
+            {% if current_user.is_admin %}
+            <div class="mt-1" style="{% if cfg.tiene_estilo %}margin-left:1.4em{% endif %}">
+              <span class="badge rounded-pill" style="background:#eaf6fb;color:#1B4F72;font-size:10px">
+                <i class="bi bi-houses"></i> {{ fila.barrio.nombre }}
+              </span>
+            </div>
+            {% endif %}
+          </td>
+          {% if cfg.tiene_estilo %}
+          <td><i class="bi {{ fila.icono }}" style="font-size:18px;color:{{ fila.color }}"></i></td>
+          <td>
+            <span class="d-inline-flex align-items-center gap-2">
+              <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:{{ fila.color }};border:1px solid #ddd"></span>
+              <code style="font-size:12px">{{ fila.color }}</code>
+            </span>
+          </td>
+          {% endif %}
+          <td>{{ fila.items.count() }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{{ url_for('admin.catalogo_editar', seccion=seccion, item_id=fila.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+              {% if fila.items.count() == 0 %}
+              <form method="POST" action="{{ url_for('admin.catalogo_eliminar', seccion=seccion, item_id=fila.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar {{ fila.nombre }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="{% if cfg.tiene_estilo %}5{% else %}3{% endif %}" class="text-muted text-center py-4" style="font-size:13px">
+            No hay {{ cfg.plural.lower() }} todavía.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

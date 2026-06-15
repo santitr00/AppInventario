@@ -101,8 +101,12 @@
       </div>
       {% endif %}
       <div class="mb-3">
+        <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Área</div>
+        <div>{{ item.area_nombre or 'General del barrio' }}</div>
+      </div>
+      <div class="mb-3">
         <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Ubicación</div>
-        <div>{{ item.ubicacion or '-' }}</div>
+        <div>{{ item.ubicacion_nombre or '-' }}</div>
       </div>
       {% if item.fecha_ingreso %}
       <div class="mb-3">

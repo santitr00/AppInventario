@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from datetime import date
 
 from app import create_app, db
-from app.models import Barrio, Categoria, Item, User
+from app.models import Barrio, Categoria, Area, Ubicacion, Item, User
 
 BARRIO_NOMBRE = "Barrio Ejemplo"
 USUARIO_DEMO = "ejemplo"
@@ -31,7 +31,11 @@ with app.app_context():
     if "--reset" in sys.argv:
         barrio_viejo = Barrio.query.filter_by(nombre=BARRIO_NOMBRE).first()
         if barrio_viejo:
+            # Borrar ítems primero (FK a categoría/área/ubicación), luego catálogos.
             Item.query.filter_by(barrio_id=barrio_viejo.id).delete()
+            Categoria.query.filter_by(barrio_id=barrio_viejo.id).delete()
+            Area.query.filter_by(barrio_id=barrio_viejo.id).delete()
+            Ubicacion.query.filter_by(barrio_id=barrio_viejo.id).delete()
             user_viejo = User.query.filter_by(username=USUARIO_DEMO).first()
             if user_viejo:
                 db.session.delete(user_viejo)
@@ -71,6 +75,23 @@ with app.app_context():
     db.session.commit()
     print(f'✓ {len(cats)} categorías')
 
+    # ── Ubicaciones (catálogo por barrio, get-or-create) ─────────────────────
+    ubic_cache = {}
+
+    def get_ubicacion_id(nombre):
+        if not nombre:
+            return None
+        key = nombre.strip().lower()
+        if key in ubic_cache:
+            return ubic_cache[key]
+        u = Ubicacion.query.filter_by(barrio_id=barrio.id, nombre=nombre.strip()).first()
+        if not u:
+            u = Ubicacion(nombre=nombre.strip(), barrio_id=barrio.id)
+            db.session.add(u)
+            db.session.flush()
+        ubic_cache[key] = u.id
+        return u.id
+
     # ── Items ────────────────────────────────────────────────────────────────
     def item(nombre, cat_nombre, ubicacion, estado="Operativo", cantidad=1,
              codigo=None, marca=None, modelo=None, numero_serie=None,
@@ -79,7 +100,7 @@ with app.app_context():
             nombre=nombre,
             categoria_id=cats[cat_nombre].id,
             barrio_id=barrio.id,
-            ubicacion=ubicacion,
+            ubicacion_id=get_ubicacion_id(ubicacion),
             estado=estado,
             cantidad=cantidad,
             codigo=codigo,

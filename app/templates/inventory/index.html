@@ -98,7 +98,7 @@
             <span class="cat-dot" style="background:{{ item.categoria.color }}"></span>{{ item.categoria.nombre }}
             {% endif %}
           </td>
-          <td>{{ item.ubicacion or '-' }}</td>
+          <td>{{ item.ubicacion_nombre or '-' }}</td>
           <td>
             {% set estado_lower = item.estado|lower|replace(' ', '-') %}
             {% if 'operat' in estado_lower %}

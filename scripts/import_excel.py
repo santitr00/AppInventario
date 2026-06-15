@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from openpyxl import load_workbook
 from app import create_app, db
-from app.models import Item, Categoria, Barrio, Historial, User
+from app.models import Item, Categoria, Ubicacion, Barrio, Historial, User
 
 app = create_app()
 
@@ -58,6 +58,11 @@ def importar(archivo, barrio_id, user_id=1):
     for cat in Categoria.query.filter_by(barrio_id=barrio_id).all():
         cat_cache[cat.nombre.lower()] = cat.id
 
+    # Cache de ubicaciones del barrio destino (get-or-create por nombre)
+    ubic_cache = {}
+    for u in Ubicacion.query.filter_by(barrio_id=barrio_id).all():
+        ubic_cache[u.nombre.lower()] = u.id
+
     count = 0
     for row in ws.iter_rows(min_row=2, values_only=False):
         vals = [cell.value for cell in row]
@@ -75,13 +80,25 @@ def importar(archivo, barrio_id, user_id=1):
             cat_cache[cat_nombre.lower()] = nueva_cat.id
             cat_id = nueva_cat.id
 
+        # Resolver ubicación (get-or-create por barrio)
+        ubic_nombre = str(vals[col_ubic]).strip() if col_ubic is not None and vals[col_ubic] else ""
+        ubic_id = None
+        if ubic_nombre:
+            ubic_id = ubic_cache.get(ubic_nombre.lower())
+            if not ubic_id:
+                nueva_u = Ubicacion(nombre=ubic_nombre, barrio_id=barrio_id)
+                db.session.add(nueva_u)
+                db.session.flush()
+                ubic_cache[ubic_nombre.lower()] = nueva_u.id
+                ubic_id = nueva_u.id
+
         item = Item(
             nombre=str(nombre).strip(),
             codigo=str(vals[col_codigo]).strip() if col_codigo is not None and vals[col_codigo] else None,
             descripcion=str(vals[col_desc]).strip() if col_desc and vals[col_desc] else "",
             categoria_id=cat_id,
             barrio_id=barrio_id,
-            ubicacion=str(vals[col_ubic]).strip() if col_ubic and vals[col_ubic] else "",
+            ubicacion_id=ubic_id,
             estado=str(vals[col_estado]).strip() if col_estado and vals[col_estado] else "Operativo",
             cantidad=int(vals[col_cant]) if col_cant and vals[col_cant] else 1,
             marca=str(vals[col_marca]).strip() if col_marca and vals[col_marca] else "",

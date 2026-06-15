@@ -3,7 +3,7 @@ from datetime import date
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from app.models import Item, Categoria, Historial, Barrio, AuditLog
+from app.models import Item, Categoria, Area, Ubicacion, Historial, Barrio, AuditLog
 from app.audit import log_event
 from app import db
 
@@ -19,6 +19,19 @@ def allowed_file(filename):
 
 def allowed_pdf(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_PDF
+
+
+def opt_fk_en_barrio(model, raw_id, barrio_id):
+    """Devuelve el id si pertenece a un objeto de `model` de ese barrio; si no,
+    None. Evita que un POST manipulado asigne área/ubicación de otro barrio."""
+    if not raw_id:
+        return None
+    try:
+        oid = int(raw_id)
+    except (TypeError, ValueError):
+        return None
+    obj = db.session.get(model, oid)
+    return oid if (obj and obj.barrio_id == barrio_id) else None
 
 
 def get_user_barrio_id():
@@ -89,6 +102,8 @@ def crear_item():
         return redirect(url_for("inventory.index"))
 
     categorias = Categoria.visibles_para_barrio(barrio_id)
+    areas = Area.visibles_para_barrio(barrio_id)
+    ubicaciones = Ubicacion.visibles_para_barrio(barrio_id)
 
     if request.method == "POST":
         item = Item(
@@ -97,7 +112,8 @@ def crear_item():
             descripcion=request.form.get("descripcion", ""),
             categoria_id=int(request.form["categoria_id"]),
             barrio_id=barrio_id,
-            ubicacion=request.form.get("ubicacion", ""),
+            area_id=opt_fk_en_barrio(Area, request.form.get("area_id"), barrio_id),
+            ubicacion_id=opt_fk_en_barrio(Ubicacion, request.form.get("ubicacion_id"), barrio_id),
             estado=request.form.get("estado", "Operativo"),
             cantidad=int(request.form.get("cantidad", 1)),
             marca=request.form.get("marca", ""),
@@ -139,7 +155,10 @@ def crear_item():
         flash(f"Ítem '{item.nombre}' creado correctamente.", "success")
         return redirect(url_for("inventory.ver_item", item_id=item.id))
 
-    return render_template("inventory/form_item.html", item=None, categorias=categorias)
+    return render_template(
+        "inventory/form_item.html",
+        item=None, categorias=categorias, areas=areas, ubicaciones=ubicaciones,
+    )
 
 
 @inventory_bp.route("/item/<int:item_id>")
@@ -191,12 +210,14 @@ def editar_item(item_id):
         flash("No tenés acceso a este ítem.", "danger")
         return redirect(url_for("inventory.index"))
 
-    barrio_id = get_user_barrio_id()
-    categorias = Categoria.visibles_para_barrio(barrio_id)
+    # Los desplegables se acotan al barrio del ítem (no al barrio activo del admin).
+    categorias = Categoria.visibles_para_barrio(item.barrio_id)
+    areas = Area.visibles_para_barrio(item.barrio_id)
+    ubicaciones = Ubicacion.visibles_para_barrio(item.barrio_id)
 
     if request.method == "POST":
         cambios = []
-        for campo in ["nombre", "codigo", "descripcion", "ubicacion", "estado", "marca", "modelo", "numero_serie", "notas"]:
+        for campo in ["nombre", "codigo", "descripcion", "estado", "marca", "modelo", "numero_serie", "notas"]:
             nuevo = request.form.get(campo, "").strip()
             viejo = getattr(item, campo) or ""
             if nuevo != viejo:
@@ -208,10 +229,20 @@ def editar_item(item_id):
             cambios.append(f"cantidad: {item.cantidad} → {nueva_cant}")
             item.cantidad = nueva_cant
 
-        nueva_cat = int(request.form.get("categoria_id", item.categoria_id))
-        if nueva_cat != item.categoria_id:
+        nueva_cat = opt_fk_en_barrio(Categoria, request.form.get("categoria_id"), item.barrio_id)
+        if nueva_cat and nueva_cat != item.categoria_id:
             cambios.append("categoría actualizada")
             item.categoria_id = nueva_cat
+
+        nueva_area = opt_fk_en_barrio(Area, request.form.get("area_id"), item.barrio_id)
+        if nueva_area != item.area_id:
+            cambios.append("área actualizada")
+            item.area_id = nueva_area
+
+        nueva_ubi = opt_fk_en_barrio(Ubicacion, request.form.get("ubicacion_id"), item.barrio_id)
+        if nueva_ubi != item.ubicacion_id:
+            cambios.append("ubicación actualizada")
+            item.ubicacion_id = nueva_ubi
 
         # Foto
         if "foto" in request.files:
@@ -246,4 +277,7 @@ def editar_item(item_id):
 
         return redirect(url_for("inventory.ver_item", item_id=item.id))
 
-    return render_template("inventory/form_item.html", item=item, categorias=categorias)
+    return render_template(
+        "inventory/form_item.html",
+        item=item, categorias=categorias, areas=areas, ubicaciones=ubicaciones,
+    )

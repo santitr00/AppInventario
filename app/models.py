@@ -57,7 +57,37 @@ class User(UserMixin, db.Model):
         return f"<User {self.username} ({self.rol})>"
 
 
-class Categoria(db.Model):
+class _CatalogoPorBarrioMixin:
+    """Comportamiento compartido por los catálogos por barrio (Categoría, Área,
+    Ubicación): cada uno pertenece a un único barrio y su nombre es único dentro
+    de ese barrio. Dos barrios distintos pueden repetir nombres."""
+
+    @classmethod
+    def visibles_para_barrio(cls, barrio_id):
+        """Filas del barrio. Si barrio_id es None (admin sin barrio activo
+        seleccionado), retorna todas las de todos los barrios."""
+        q = cls.query
+        if barrio_id is not None:
+            q = q.filter_by(barrio_id=barrio_id)
+        return q.order_by(cls.nombre).all()
+
+    @classmethod
+    def nombre_disponible(cls, nombre, barrio_id, exclude_id=None):
+        """Unicidad del nombre dentro de un barrio (case-insensitive, trim).
+        Retorna True si el nombre está disponible en ese barrio."""
+        nombre_norm = (nombre or "").strip().lower()
+        if not nombre_norm or barrio_id is None:
+            return False
+        q = cls.query.filter(
+            db.func.lower(cls.nombre) == nombre_norm,
+            cls.barrio_id == barrio_id,
+        )
+        if exclude_id is not None:
+            q = q.filter(cls.id != exclude_id)
+        return q.first() is None
+
+
+class Categoria(_CatalogoPorBarrioMixin, db.Model):
     __tablename__ = "categorias"
     __table_args__ = (
         db.UniqueConstraint("nombre", "barrio_id", name="uq_categoria_nombre_barrio"),
@@ -71,33 +101,40 @@ class Categoria(db.Model):
     barrio = db.relationship("Barrio", backref=db.backref("categorias", lazy=True))
     items = db.relationship("Item", backref="categoria", lazy="dynamic")
 
-    @classmethod
-    def visibles_para_barrio(cls, barrio_id):
-        """Categorías de un barrio. Si barrio_id es None (admin sin barrio
-        activo seleccionado), retorna todas las categorías de todos los barrios."""
-        q = cls.query
-        if barrio_id is not None:
-            q = q.filter_by(barrio_id=barrio_id)
-        return q.order_by(cls.nombre).all()
-
-    @classmethod
-    def nombre_disponible(cls, nombre, barrio_id, exclude_id=None):
-        """Unicidad del nombre dentro de un barrio (case-insensitive, trim).
-        Dos barrios distintos pueden tener categorías con el mismo nombre.
-        Retorna True si el nombre está disponible en ese barrio."""
-        nombre_norm = (nombre or "").strip().lower()
-        if not nombre_norm or barrio_id is None:
-            return False
-        q = cls.query.filter(
-            db.func.lower(cls.nombre) == nombre_norm,
-            cls.barrio_id == barrio_id,
-        )
-        if exclude_id is not None:
-            q = q.filter(cls.id != exclude_id)
-        return q.first() is None
-
     def __repr__(self):
         return f"<Categoria {self.nombre}>"
+
+
+class Area(_CatalogoPorBarrioMixin, db.Model):
+    __tablename__ = "areas"
+    __table_args__ = (
+        db.UniqueConstraint("nombre", "barrio_id", name="uq_area_nombre_barrio"),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    barrio_id = db.Column(db.Integer, db.ForeignKey("barrios.id"), nullable=False)
+
+    barrio = db.relationship("Barrio", backref=db.backref("areas", lazy=True))
+    items = db.relationship("Item", backref="area", lazy="dynamic")
+
+    def __repr__(self):
+        return f"<Area {self.nombre}>"
+
+
+class Ubicacion(_CatalogoPorBarrioMixin, db.Model):
+    __tablename__ = "ubicaciones"
+    __table_args__ = (
+        db.UniqueConstraint("nombre", "barrio_id", name="uq_ubicacion_nombre_barrio"),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(200), nullable=False)
+    barrio_id = db.Column(db.Integer, db.ForeignKey("barrios.id"), nullable=False)
+
+    barrio = db.relationship("Barrio", backref=db.backref("ubicaciones", lazy=True))
+    items = db.relationship("Item", backref="ubicacion", lazy="dynamic")
+
+    def __repr__(self):
+        return f"<Ubicacion {self.nombre}>"
 
 
 class Item(db.Model):
@@ -107,7 +144,8 @@ class Item(db.Model):
     descripcion = db.Column(db.Text)
     categoria_id = db.Column(db.Integer, db.ForeignKey("categorias.id"), nullable=False)
     barrio_id = db.Column(db.Integer, db.ForeignKey("barrios.id"), nullable=False)
-    ubicacion = db.Column(db.String(200))
+    area_id = db.Column(db.Integer, db.ForeignKey("areas.id"), nullable=True)
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey("ubicaciones.id"), nullable=True)
     estado = db.Column(db.String(50), default="Operativo")
     # Estados sugeridos: Operativo, Stock bajo, En reparación, Fuera de servicio, En préstamo
     codigo = db.Column(db.String(50))
@@ -132,6 +170,14 @@ class Item(db.Model):
         "Historial", backref="item", lazy="dynamic", order_by="Historial.created_at.desc()"
     )
     creator = db.relationship("User", foreign_keys=[created_by])
+
+    @property
+    def area_nombre(self):
+        return self.area.nombre if self.area else None
+
+    @property
+    def ubicacion_nombre(self):
+        return self.ubicacion.nombre if self.ubicacion else None
 
     def __repr__(self):
         return f"<Item {self.nombre}>"
@@ -173,6 +219,10 @@ class AuditLog(db.Model):
     BARRIO_ELIMINADO = "barrio_eliminado"
     CATEGORIA_CREADA = "categoria_creada"
     CATEGORIA_ELIMINADA = "categoria_eliminada"
+    AREA_CREADA = "area_creada"
+    AREA_ELIMINADA = "area_eliminada"
+    UBICACION_CREADA = "ubicacion_creada"
+    UBICACION_ELIMINADA = "ubicacion_eliminada"
     EXPORT_CSV = "export_csv"
     EXPORT_PDF = "export_pdf"
 

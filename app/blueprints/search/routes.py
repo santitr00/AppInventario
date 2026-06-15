@@ -3,7 +3,7 @@ from itertools import groupby
 
 from flask import Blueprint, render_template, request, session, make_response
 from flask_login import login_required, current_user
-from app.models import Item, Categoria, Barrio, AuditLog
+from app.models import Item, Categoria, Ubicacion, Barrio, AuditLog
 from app.audit import log_event
 from app import db
 import csv
@@ -30,7 +30,7 @@ def build_items_query(q, categoria_id, estado, ubicacion, user, admin_barrio_id)
                 Item.marca.ilike(like),
                 Item.modelo.ilike(like),
                 Item.numero_serie.ilike(like),
-                Item.ubicacion.ilike(like),
+                Item.ubicacion.has(Ubicacion.nombre.ilike(like)),
             )
         )
 
@@ -39,7 +39,7 @@ def build_items_query(q, categoria_id, estado, ubicacion, user, admin_barrio_id)
     if estado:
         query = query.filter_by(estado=estado)
     if ubicacion:
-        query = query.filter(Item.ubicacion.ilike(f"%{ubicacion}%"))
+        query = query.filter(Item.ubicacion.has(Ubicacion.nombre.ilike(f"%{ubicacion}%")))
 
     return query
 
@@ -69,14 +69,15 @@ def buscar():
         todos = query.order_by(Item.nombre).all()
         buf = io.StringIO()
         writer = csv.writer(buf)
-        writer.writerow(["Nombre", "Código", "Categoría", "Barrio", "Ubicación", "Estado", "Cantidad", "Marca", "Modelo", "Nro. Serie", "Fecha Ingreso", "Notas"])
+        writer.writerow(["Nombre", "Código", "Categoría", "Barrio", "Área", "Ubicación", "Estado", "Cantidad", "Marca", "Modelo", "Nro. Serie", "Fecha Ingreso", "Notas"])
         for it in todos:
             writer.writerow([
                 it.nombre,
                 it.codigo or "",
                 it.categoria.nombre if it.categoria else "",
                 it.barrio.nombre if it.barrio else "",
-                it.ubicacion or "",
+                it.area_nombre or "",
+                it.ubicacion_nombre or "",
                 it.estado or "",
                 it.cantidad,
                 it.marca or "",

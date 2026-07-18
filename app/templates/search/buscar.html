@@ -28,8 +28,26 @@
 </div>
 {% endmacro %}
 
+{% block extra_css %}
+<style>
+  .fila-editada td { background: #fff8e1; }
+  .fila-editada td:first-child { box-shadow: inset 3px 0 0 var(--accent, #2E86C1); }
+</style>
+{% endblock %}
+
 {% block content %}
 {% set hay_filtros = q or categoria_ids or area_ids or ubicacion_ids or estado_sel %}
+{# Contexto de la búsqueda actual: viaja con el botón Editar para poder volver acá #}
+{% set ret_params = {
+  'ret_from': 'search',
+  'ret_q': q,
+  'ret_categoria_id': categoria_ids,
+  'ret_area_id': area_ids,
+  'ret_ubicacion_id': ubicacion_ids,
+  'ret_estado': estado_sel,
+  'ret_page': pagination.page,
+} %}
+{% set ret_params = dict(ret_params.items()|selectattr('1')|list) %}
 
 <!-- Search box -->
 <div class="card-custom p-4 mb-4">
@@ -124,7 +142,7 @@
       </thead>
       <tbody>
         {% for item in items %}
-        <tr>
+        <tr {% if item.id == hl %}id="fila-editada" class="fila-editada"{% endif %}>
           <td>
             <strong>{{ item.nombre }}</strong>
             {% if item.marca or item.modelo %}
@@ -159,7 +177,7 @@
           <td>
             <div class="d-flex gap-1">
               {% if current_user.puede_editar() %}
-              <a href="{{ url_for('inventory.editar_item', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+              <a href="{{ url_for('inventory.editar_item', item_id=item.id, **ret_params) }}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
               {% endif %}
               <a href="{{ url_for('inventory.ver_item', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary" title="Ver detalle"><i class="bi bi-eye"></i></a>
             </div>
@@ -203,4 +221,10 @@
   </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('fila-editada')?.scrollIntoView({ block: 'center' });
+</script>
 {% endblock %}

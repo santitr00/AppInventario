@@ -34,6 +34,50 @@ def opt_fk_en_barrio(model, raw_id, barrio_id):
     return oid if (obj and obj.barrio_id == barrio_id) else None
 
 
+# ── Contexto de búsqueda (para volver a la lista filtrada tras editar) ──
+# Los parámetros viajan con prefijo `ret_` para no chocar con los campos del
+# form del ítem (`estado`, por ejemplo). Nunca se redirige a una URL recibida
+# del cliente: se reconstruye con url_for a partir de estos valores saneados.
+RET_MULTI = {"categoria_id", "area_id", "ubicacion_id"}
+RET_SINGLE = {"q", "estado"}
+
+
+def leer_ret_params(source):
+    """Extrae y sanea el contexto de búsqueda desde request.args o request.form.
+    Devuelve {} si no viene marcado como proveniente de la búsqueda."""
+    if source.get("ret_from") != "search":
+        return {}
+
+    ret = {"ret_from": "search"}
+    for name in RET_SINGLE:
+        val = (source.get(f"ret_{name}") or "").strip()
+        if val:
+            ret[f"ret_{name}"] = val[:200]
+    for name in RET_MULTI:
+        ids = []
+        for raw in source.getlist(f"ret_{name}"):
+            try:
+                ids.append(int(raw))
+            except (TypeError, ValueError):
+                continue
+        if ids:
+            ret[f"ret_{name}"] = ids
+    try:
+        page = int(source.get("ret_page") or 1)
+    except (TypeError, ValueError):
+        page = 1
+    ret["ret_page"] = max(1, page)
+    return ret
+
+
+def url_busqueda(ret, hl=None):
+    """Reconstruye la URL de la búsqueda a partir del contexto saneado."""
+    kwargs = {k[4:]: v for k, v in ret.items() if k != "ret_from"}
+    if hl:
+        kwargs["hl"] = hl
+    return url_for("search.buscar", **kwargs)
+
+
 def get_user_barrio_id():
     """Retorna el barrio_id activo: para admin usa la sesión, para otros su barrio asignado."""
     if current_user.is_admin:
@@ -210,6 +254,8 @@ def editar_item(item_id):
         flash("No tenés acceso a este ítem.", "danger")
         return redirect(url_for("inventory.index"))
 
+    ret = leer_ret_params(request.form if request.method == "POST" else request.args)
+
     # Los desplegables se acotan al barrio del ítem (no al barrio activo del admin).
     categorias = Categoria.visibles_para_barrio(item.barrio_id)
     areas = Area.visibles_para_barrio(item.barrio_id)
@@ -275,9 +321,13 @@ def editar_item(item_id):
         else:
             flash("No se detectaron cambios.", "info")
 
+        if ret:
+            return redirect(url_busqueda(ret, hl=item.id))
         return redirect(url_for("inventory.ver_item", item_id=item.id))
 
     return render_template(
         "inventory/form_item.html",
         item=item, categorias=categorias, areas=areas, ubicaciones=ubicaciones,
+        ret_params=ret,
+        cancel_url=url_busqueda(ret) if ret else url_for("inventory.index"),
     )

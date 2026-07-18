@@ -125,6 +125,7 @@ def buscar():
         area_ids=area_ids,
         ubicacion_ids=ubicacion_ids,
         estado_sel=estado,
+        hl=request.args.get("hl", type=int),
     )
 
 

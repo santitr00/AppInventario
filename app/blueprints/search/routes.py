@@ -1,13 +1,15 @@
 from datetime import date
 from itertools import groupby
 
-from flask import Blueprint, render_template, request, session, make_response
+from flask import Blueprint, render_template, request, session, make_response, current_app
 from flask_login import login_required, current_user
 from app.models import Item, Categoria, Area, Ubicacion, Barrio, AuditLog
 from app.audit import log_event
 from app import db
 import csv
 import io
+import os
+from pathlib import Path
 
 search_bp = Blueprint("search", __name__, template_folder="../../templates/search")
 
@@ -153,6 +155,18 @@ def export_pdf():
         (cat, list(its))
         for cat, its in groupby(todos, key=lambda it: it.categoria)
     ]
+
+    # Resolvemos la ruta absoluta (file://) de cada foto para que WeasyPrint
+    # pueda leerla desde el filesystem. Si el archivo no existe, dejamos None
+    # y el template cae al placeholder (nunca rompe la generación del PDF).
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    for _, items in grupos:
+        for it in items:
+            it.foto_uri = None
+            if it.foto:
+                fpath = os.path.join(upload_folder, it.foto)
+                if os.path.isfile(fpath):
+                    it.foto_uri = Path(fpath).as_uri()
 
     if not current_user.is_admin:
         barrio_nombre = current_user.barrio.nombre if current_user.barrio else "—"

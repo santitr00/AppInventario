@@ -42,26 +42,6 @@
       margin-bottom: 22px;
     }
 
-    .brand {
-      margin-bottom: 10px;
-    }
-
-    .brand-name {
-      font-size: 19px;
-      font-weight: 700;
-      color: #1B4F72;
-      letter-spacing: 0.5px;
-    }
-
-    .brand-tagline {
-      font-size: 9.5px;
-      font-weight: 500;
-      color: #2E86C1;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-left: 9px;
-    }
-
     .doc-title {
       font-size: 21px;
       font-weight: 700;
@@ -155,16 +135,36 @@
 
     tr { page-break-inside: avoid; }
 
-    .col-codigo    { width: 9%; }
+    .col-foto      { width: 2.6cm; }
     .col-nombre    { width: 37%; }
     .col-ubicacion { width: 19%; }
     .col-estado    { width: 18%; }
     .col-cantidad  { width: 8%; text-align: center; }
 
-    .td-codigo {
-      font-size: 10px;
-      color: #999;
-      font-variant-numeric: tabular-nums;
+    /* ── Foto (miniatura de tamaño fijo, proporción conservada) ── */
+    .photo-box {
+      width: 2.2cm;
+      height: 2.2cm;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background: #fafbfc;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .photo-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .photo-empty {
+      color: #ccc;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
     }
 
     .item-nombre {
@@ -228,9 +228,6 @@
 
 <!-- ENCABEZADO -->
 <div class="header">
-  <div class="brand">
-    <span class="brand-name">GLTEC</span><span class="brand-tagline">Tecnología sin Límites</span>
-  </div>
   <div class="doc-title">Inventario</div>
   <div class="doc-barrio">{{ barrio_nombre }}</div>
   <div class="meta-row">
@@ -257,7 +254,7 @@
     <table class="items-table">
       <thead>
         <tr>
-          <th class="col-codigo">Código</th>
+          <th class="col-foto">Foto</th>
           <th class="col-nombre">Nombre</th>
           <th class="col-ubicacion">Ubicación</th>
           <th class="col-estado">Estado</th>
@@ -268,10 +265,19 @@
         {% for item in items %}
         {% set el = item.estado | lower | replace(' ', '-') if item.estado else '' %}
         <tr>
-          <td class="td-codigo">{{ item.codigo or '—' }}</td>
+          <td class="col-foto">
+            <div class="photo-box">
+              {% if item.foto_uri %}
+              <img src="{{ item.foto_uri }}" alt="">
+              {% else %}
+              <span class="photo-empty">·</span>
+              {% endif %}
+            </div>
+          </td>
           <td>
             <div class="item-nombre">{{ item.nombre }}</div>
             {%- set tech = [] -%}
+            {%- if item.codigo   -%}{%- set _ = tech.append('Cód: ' ~ item.codigo)                          -%}{%- endif -%}
             {%- if item.marca    -%}{%- set _ = tech.append(item.marca)                                    -%}{%- endif -%}
             {%- if item.modelo   -%}{%- set _ = tech.append(item.modelo)                                   -%}{%- endif -%}
             {%- if item.numero_serie -%}{%- set _ = tech.append('S/N: ' ~ item.numero_serie)               -%}{%- endif -%}

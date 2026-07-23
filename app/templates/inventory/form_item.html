@@ -135,7 +135,16 @@
         </div>
         <div class="col-md-6">
           <label class="form-label fw-semibold" style="font-size:13px">Foto</label>
-          <input type="file" name="foto" class="form-control" accept="image/*">
+          <input type="file" name="foto" id="foto-input" class="form-control" accept="image/*">
+          <div class="form-text">También podés <strong>pegar una imagen con Ctrl+V</strong> (por ej. copiada de Excel).</div>
+          <div id="foto-preview-box" class="d-none mt-2">
+            <img id="foto-preview" alt="Vista previa"
+                 style="max-height:120px; max-width:100%; border:1px solid #e9ecef; border-radius:8px; display:block">
+            <small class="text-muted d-block mt-1">
+              <span id="foto-preview-nombre"></span>
+              <a href="#" id="foto-preview-quitar" class="text-decoration-none ms-1" style="color:#c0392b">quitar</a>
+            </small>
+          </div>
           {% if item and item.foto %}
           <small class="text-muted">Foto actual: {{ item.foto }}</small>
           {% endif %}
@@ -162,4 +171,108 @@
     </div>
   </form>
 </div>
+
+<script>
+(function () {
+  // Pegado de foto desde el portapapeles (Ctrl+V). Reutiliza el mismo
+  // <input type="file" name="foto"> del form: la imagen se inyecta con
+  // DataTransfer y viaja en el POST multipart normal. Sin endpoints nuevos.
+  var input   = document.getElementById('foto-input');
+  var box     = document.getElementById('foto-preview-box');
+  var img     = document.getElementById('foto-preview');
+  var nombreEl= document.getElementById('foto-preview-nombre');
+  var quitar  = document.getElementById('foto-preview-quitar');
+  if (!input) return;
+
+  // Espejo de la validación del servidor (ALLOWED_EXT + MAX_CONTENT_LENGTH).
+  var TIPOS = {
+    'image/png':  'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+    'image/gif':  'gif'
+  };
+  var MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+  var objectUrl = null;
+
+  function limpiarPreview() {
+    if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+    if (box) box.classList.add('d-none');
+    if (img) img.removeAttribute('src');
+    if (nombreEl) nombreEl.textContent = '';
+  }
+
+  function mostrarPreview(file) {
+    if (!box || !img) return;
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
+    if (nombreEl) nombreEl.textContent = file.name;
+    box.classList.remove('d-none');
+  }
+
+  document.addEventListener('paste', function (e) {
+    var data = e.clipboardData || window.clipboardData;
+    if (!data) return;
+
+    // Buscar una imagen entre lo pegado. Si no hay, no tocamos nada:
+    // el pegado normal de texto (nombre, notas, etc.) sigue funcionando.
+    var blob = null;
+    var items = data.items || [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].kind === 'file' && items[i].type.indexOf('image/') === 0) {
+        blob = items[i].getAsFile();
+        break;
+      }
+    }
+    if (!blob && data.files) {
+      for (var j = 0; j < data.files.length; j++) {
+        if (data.files[j].type.indexOf('image/') === 0) { blob = data.files[j]; break; }
+      }
+    }
+    if (!blob) return; // no era imagen → dejar el pegado normal
+
+    e.preventDefault();
+
+    var ext = TIPOS[blob.type];
+    if (!ext) {
+      alert('Ese tipo de imagen no está permitido. Usá PNG, JPG, WEBP o GIF.');
+      return;
+    }
+    if (blob.size > MAX_BYTES) {
+      alert('La imagen pesa más de 8 MB. Pegá una más liviana.');
+      return;
+    }
+
+    // El blob pegado no trae nombre; le damos uno con extensión válida
+    // (el backend valida por extensión).
+    var nombre = 'pegado_' + Date.now() + '.' + ext;
+    var file = new File([blob], nombre, { type: blob.type });
+
+    var dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files; // se sube por request.files["foto"] en el POST
+
+    mostrarPreview(file);
+  });
+
+  // Si el usuario elige un archivo con el botón nativo, reflejarlo en la
+  // misma preview (o limpiarla si canceló).
+  input.addEventListener('change', function () {
+    var f = input.files && input.files[0];
+    if (f && f.type.indexOf('image/') === 0) {
+      mostrarPreview(f);
+    } else {
+      limpiarPreview();
+    }
+  });
+
+  if (quitar) {
+    quitar.addEventListener('click', function (e) {
+      e.preventDefault();
+      input.value = '';
+      limpiarPreview();
+    });
+  }
+})();
+</script>
 {% endblock %}

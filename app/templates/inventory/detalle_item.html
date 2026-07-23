@@ -21,6 +21,20 @@
   {% if current_user.puede_editar() %}
   <a href="{{ url_for('inventory.editar_item', item_id=item.id) }}" class="btn btn-sm btn-gltec"><i class="bi bi-pencil"></i> Editar</a>
   {% endif %}
+  {% if current_user.is_admin %}
+  <form method="POST" action="{{ url_for('inventory.eliminar_item', item_id=item.id) }}"
+        onsubmit="return confirm('¿Eliminar definitivamente el ítem «{{ item.nombre|e }}»? Esta acción no se puede deshacer.');"
+        class="ms-auto">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {# Contexto de la búsqueda: viaja para volver al mismo filtro tras eliminar #}
+    {% for k, v in (ret_params or {}).items() %}
+      {% if v is iterable and v is not string %}
+        {% for vi in v %}<input type="hidden" name="{{ k }}" value="{{ vi }}">{% endfor %}
+      {% else %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}
+    {% endfor %}
+    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button>
+  </form>
+  {% endif %}
 </div>
 
 <div class="row g-4">

@@ -179,7 +179,7 @@
               {% if current_user.puede_editar() %}
               <a href="{{ url_for('inventory.editar_item', item_id=item.id, **ret_params) }}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
               {% endif %}
-              <a href="{{ url_for('inventory.ver_item', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary" title="Ver detalle"><i class="bi bi-eye"></i></a>
+              <a href="{{ url_for('inventory.ver_item', item_id=item.id, **ret_params) }}" class="btn btn-sm btn-outline-secondary" title="Ver detalle"><i class="bi bi-eye"></i></a>
             </div>
           </td>
         </tr>

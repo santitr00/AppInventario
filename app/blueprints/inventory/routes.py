@@ -226,8 +226,11 @@ def ver_item(item_id):
         flash("No tenés acceso a este ítem.", "danger")
         return redirect(url_for("inventory.index"))
 
+    ret = leer_ret_params(request.args)
     historial = item.historial.limit(20).all()
-    return render_template("inventory/detalle_item.html", item=item, historial=historial)
+    return render_template(
+        "inventory/detalle_item.html", item=item, historial=historial, ret_params=ret,
+    )
 
 
 @inventory_bp.route("/item/<int:item_id>/editar", methods=["GET", "POST"])
@@ -331,3 +334,58 @@ def editar_item(item_id):
         ret_params=ret,
         cancel_url=url_busqueda(ret) if ret else url_for("inventory.index"),
     )
+
+
+@inventory_bp.route("/item/<int:item_id>/eliminar", methods=["POST"])
+@login_required
+def eliminar_item(item_id):
+    # Eliminación definitiva del ítem: reservada al administrador global.
+    if not current_user.is_admin:
+        log_event(
+            AuditLog.ACCESO_DENEGADO,
+            nivel=AuditLog.ALERTA,
+            target_tipo="item",
+            target_id=item_id,
+            detalle="intento de eliminar ítem sin ser admin",
+        )
+        flash("Solo un administrador puede eliminar ítems.", "danger")
+        return redirect(url_for("inventory.ver_item", item_id=item_id))
+
+    ret = leer_ret_params(request.form)
+
+    item = db.session.get(Item, item_id)
+    if not item:
+        flash("Ítem no encontrado.", "warning")
+        return redirect(url_busqueda(ret) if ret else url_for("inventory.index"))
+
+    nombre = item.nombre
+    item_id_log = item.id
+    barrio_id_log = item.barrio_id
+
+    # Archivos asociados en disco: se borran best-effort, sin frenar la baja.
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    for adjunto in (item.foto, item.pdf):
+        if adjunto:
+            try:
+                os.remove(os.path.join(upload_folder, adjunto))
+            except OSError:
+                pass
+
+    # El historial tiene FK NOT NULL a items y la relación no cascadea:
+    # lo eliminamos explícitamente antes de borrar el ítem.
+    Historial.query.filter_by(item_id=item.id).delete()
+    db.session.delete(item)
+    db.session.commit()
+
+    log_event(
+        AuditLog.ITEM_ELIMINADO,
+        nivel=AuditLog.ADVERTENCIA,
+        target_tipo="item",
+        target_id=item_id_log,
+        target_label=nombre,
+        detalle=f"barrio_id={barrio_id_log}",
+    )
+    flash(f"Ítem '{nombre}' eliminado definitivamente.", "success")
+    # Volvemos a la búsqueda filtrada de la que veníamos, para seguir depurando
+    # rápido; si no hay contexto de búsqueda, al inventario.
+    return redirect(url_busqueda(ret) if ret else url_for("inventory.index"))

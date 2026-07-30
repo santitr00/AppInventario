@@ -30,8 +30,8 @@
 
 {% block extra_css %}
 <style>
-  .fila-editada td { background: #fff8e1; }
-  .fila-editada td:first-child { box-shadow: inset 3px 0 0 var(--accent, #2E86C1); }
+  .fila-editada td { background: var(--row-editada); }
+  .fila-editada td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 </style>
 {% endblock %}
 
@@ -54,7 +54,7 @@
   <form method="GET" action="{{ url_for('search.buscar') }}">
     <div class="d-flex gap-2 mb-3">
       <div class="flex-grow-1 position-relative">
-        <i class="bi bi-search position-absolute" style="left:14px;top:12px;color:#999"></i>
+        <i class="bi bi-search position-absolute" style="left:14px;top:12px;color:var(--ink-300)"></i>
         <input type="text" name="q" class="form-control" style="padding-left:40px" value="{{ q }}" placeholder="Buscar por nombre, código, marca, modelo, número de serie...">
       </div>
       <button type="submit" class="btn btn-gltec px-4">Buscar</button>
@@ -78,41 +78,41 @@
 {% if hay_filtros %}
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
   <span style="font-size:13.5px" class="text-muted">
-    Se encontraron <strong style="color:#1B4F72">{{ pagination.total }}</strong> resultado{{ 's' if pagination.total != 1 }}
-    {% if q %}para "<strong style="color:#1B4F72">{{ q }}</strong>"{% endif %}
+    Se encontraron <strong style="color:var(--brand-ink)">{{ pagination.total }}</strong> resultado{{ 's' if pagination.total != 1 }}
+    {% if q %}para "<strong style="color:var(--brand-ink)">{{ q }}</strong>"{% endif %}
   </span>
   <div class="d-flex gap-2 align-items-center flex-wrap">
     {% if q %}
-    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+    <span class="badge rounded-pill" style="background:var(--chip-bg);color:var(--chip-fg);font-weight:600;font-size:12px">
       <i class="bi bi-search" style="font-size:10px"></i> {{ q }}
-      <a href="{{ url_for('search.buscar', categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+      <a href="{{ url_for('search.buscar', categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel) }}" class="text-decoration-none" style="color:var(--chip-fg);opacity:.6">×</a>
     </span>
     {% endif %}
     {% for c in categorias if c.id in categoria_ids %}
-    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+    <span class="badge rounded-pill" style="background:var(--chip-bg);color:var(--chip-fg);font-weight:600;font-size:12px">
       <span class="cat-dot" style="background:{{ c.color }}"></span>{{ c.nombre }}
-      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids|reject('equalto', c.id)|list, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids|reject('equalto', c.id)|list, area_id=area_ids, ubicacion_id=ubicacion_ids, estado=estado_sel) }}" class="text-decoration-none" style="color:var(--chip-fg);opacity:.6">×</a>
     </span>
     {% endfor %}
     {% for a in areas if a.id in area_ids %}
-    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+    <span class="badge rounded-pill" style="background:var(--chip-bg);color:var(--chip-fg);font-weight:600;font-size:12px">
       <i class="bi bi-grid-3x3-gap" style="font-size:10px"></i> {{ a.nombre }}
-      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids|reject('equalto', a.id)|list, ubicacion_id=ubicacion_ids, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids|reject('equalto', a.id)|list, ubicacion_id=ubicacion_ids, estado=estado_sel) }}" class="text-decoration-none" style="color:var(--chip-fg);opacity:.6">×</a>
     </span>
     {% endfor %}
     {% for u in ubicaciones if u.id in ubicacion_ids %}
-    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+    <span class="badge rounded-pill" style="background:var(--chip-bg);color:var(--chip-fg);font-weight:600;font-size:12px">
       <i class="bi bi-geo-alt" style="font-size:10px"></i> {{ u.nombre }}
-      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids|reject('equalto', u.id)|list, estado=estado_sel) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids|reject('equalto', u.id)|list, estado=estado_sel) }}" class="text-decoration-none" style="color:var(--chip-fg);opacity:.6">×</a>
     </span>
     {% endfor %}
     {% if estado_sel %}
-    <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600;font-size:12px">
+    <span class="badge rounded-pill" style="background:var(--chip-bg);color:var(--chip-fg);font-weight:600;font-size:12px">
       {{ estado_sel }}
-      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids) }}" class="text-decoration-none" style="color:#1B4F72;opacity:.6">×</a>
+      <a href="{{ url_for('search.buscar', q=q, categoria_id=categoria_ids, area_id=area_ids, ubicacion_id=ubicacion_ids) }}" class="text-decoration-none" style="color:var(--chip-fg);opacity:.6">×</a>
     </span>
     {% endif %}
-    <a href="{{ url_for('search.buscar') }}" class="text-decoration-none" style="font-size:12px;color:#888">Limpiar todo</a>
+    <a href="{{ url_for('search.buscar') }}" class="text-decoration-none" style="font-size:12px;color:var(--ink-400)">Limpiar todo</a>
   </div>
 </div>
 {% endif %}

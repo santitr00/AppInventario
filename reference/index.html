@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InventarioGLTEC — Referencia visual</title>
+
+  <!-- Mismo script de tema que base.html: aplica antes del primer pintado -->
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('tema'); } catch (e) {}
+      if (t !== 'dark') t = 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.setAttribute('data-bs-theme', t);
+    })();
+  </script>
+
+  <!-- Mismas dependencias que la app -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- El sistema de diseño -->
+  <link href="tokens.css" rel="stylesheet">
+  <link href="components.css" rel="stylesheet">
+
+  <style>
+    /* Chrome propio de esta página de referencia (no forma parte del sistema) */
+    .ref-wrap    { max-width: 1080px; margin: 0 auto; padding: 32px 28px 96px; }
+    .ref-h2      { font-size: 20px; font-weight: 700; color: var(--ink-900);
+                   margin: 48px 0 6px; padding-top: 24px; border-top: 1px solid var(--border-2); }
+    .ref-h2:first-of-type { border-top: none; padding-top: 0; margin-top: 24px; }
+    .ref-lead    { font-size: 13.5px; color: var(--ink-500); margin-bottom: 20px; max-width: 62ch; }
+    .ref-h3      { font-size: 13px; font-weight: 600; text-transform: uppercase;
+                   letter-spacing: .8px; color: var(--ink-400); margin: 28px 0 12px; }
+    .ref-demo    { background: var(--surface); border: 1px solid var(--border-2);
+                   border-radius: 12px; padding: 20px; margin-bottom: 12px; }
+    .ref-note    { font-size: 12px; color: var(--ink-400); margin-top: 8px; }
+    .ref-note code { color: var(--accent-ink); background: none; padding: 0; }
+
+    /* Swatches */
+    .sw-grid     { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 10px; }
+    .sw          { border: 1px solid var(--border-2); border-radius: 10px; overflow: hidden; background: var(--surface); }
+    .sw-chip     { height: 56px; }
+    .sw-meta     { padding: 8px 10px; }
+    .sw-name     { font-size: 11.5px; font-weight: 600; color: var(--ink-700); font-family: ui-monospace, monospace; }
+    .sw-val      { font-size: 10.5px; color: var(--ink-400); font-family: ui-monospace, monospace; margin-top: 1px; }
+
+    /* Escala de tinta */
+    .ink-row     { display: flex; align-items: baseline; gap: 14px; padding: 5px 0; }
+    .ink-tok     { font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--ink-400); width: 88px; flex-shrink: 0; }
+
+    /* Barra de tema, fija arriba a la derecha */
+    .ref-bar     { position: sticky; top: 0; z-index: 50; background: var(--bg);
+                   border-bottom: 1px solid var(--border-2); padding: 12px 28px;
+                   display: flex; align-items: center; gap: 14px; }
+    .ref-bar h1  { font-size: 15px; font-weight: 700; color: var(--ink-900); margin: 0; }
+    .ref-bar .tag{ font-size: 11px; color: var(--ink-400); }
+
+    .type-row    { display: flex; align-items: baseline; gap: 16px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .type-row:last-child { border-bottom: none; }
+    .type-tok    { font-family: ui-monospace, monospace; font-size: 11px; color: var(--ink-400); width: 150px; flex-shrink: 0; }
+
+    /* Miniatura de sidebar embebida (el .sidebar real es position:fixed) */
+    .nav-demo    { width: var(--sidebar-w); border-radius: 10px; overflow: hidden;
+                   background: linear-gradient(180deg, var(--sidebar-1) 0%, var(--sidebar-2) 100%);
+                   padding: 20px 0; }
+    .nav-demo .logo     { padding: 0 20px; font-size: 20px; font-weight: 700; color: #fff; }
+    .nav-demo .logo-sub { padding: 0 20px; font-size: 11px; color: rgba(255,255,255,.5); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+<div class="ref-bar">
+  <h1>InventarioGLTEC · Referencia visual</h1>
+  <span class="tag">tokens.css + components.css</span>
+  <button type="button" class="theme-toggle ms-auto" id="theme-toggle"
+          title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
+    <i class="bi bi-moon-stars icon-light"></i>
+    <i class="bi bi-sun icon-dark"></i>
+  </button>
+</div>
+
+<div class="ref-wrap">
+
+  <p class="ref-lead" style="margin-top:20px">
+    Todo lo de esta página se renderiza con los mismos tokens y clases que usa la app.
+    Cambiá el tema con el botón de arriba: cada componente debe seguir siendo legible
+    en claro y en oscuro. La documentación completa está en <strong>STYLEGUIDE.md</strong>.
+  </p>
+
+  <!-- ════════════════════════════════════ COLOR ════════════════════════════ -->
+  <h2 class="ref-h2">Color</h2>
+  <p class="ref-lead">
+    Los tokens de marca no cambian entre temas — son rellenos con texto blanco encima.
+    Para azul como <em>texto</em> existen <code>--brand-ink</code> / <code>--accent-ink</code>.
+  </p>
+
+  <h3 class="ref-h3">Marca — constante en ambos temas</h3>
+  <div class="sw-grid">
+    <div class="sw"><div class="sw-chip" style="background:var(--primary)"></div>
+      <div class="sw-meta"><div class="sw-name">--primary</div><div class="sw-val">#1B4F72</div></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--accent)"></div>
+      <div class="sw-meta"><div class="sw-name">--accent</div><div class="sw-val">#2E86C1</div></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--primary-600)"></div>
+      <div class="sw-meta"><div class="sw-name">--primary-600</div><div class="sw-val">#154360 · hover</div></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--accent-600)"></div>
+      <div class="sw-meta"><div class="sw-name">--accent-600</div><div class="sw-val">#2471a3 · hover</div></div></div>
+    <div class="sw"><div class="sw-chip" style="background:linear-gradient(135deg,var(--primary),var(--accent))"></div>
+      <div class="sw-meta"><div class="sw-name">gradiente 135°</div><div class="sw-val">btn-gltec · avatar</div></div></div>
+  </div>
+
+  <h3 class="ref-h3">Superficies y bordes</h3>
+  <div class="sw-grid">
+    <div class="sw"><div class="sw-chip" style="background:var(--bg)"></div>
+      <div class="sw-meta"><div class="sw-name">--bg</div><div class="sw-val">fondo de página</div></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--surface)"></div>
+      <div class="sw-meta"><div class="sw-name">--surface</div><div class="sw-val">cards, tablas</div></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--surface-2)"></div>
+      <div class="sw-meta"><div class="sw-name">--surface-2</div><div class="sw-val">hover de fila</div></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--surface-3)"></div>
+      <div class="sw-meta"><div class="sw-name">--surface-3</div><div class="sw-val">thead</div></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--surface-hover)"></div>
+      <div class="sw-meta"><div class="sw-name">--surface-hover</div><div class="sw-val">hover de controles</div></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--border-3)"></div>
+      <div class="sw-meta"><div class="sw-name">--border-3</div><div class="sw-val">borde marcado</div></div></div>
+  </div>
+
+  <h3 class="ref-h3">Escala de tinta — 900 = más contraste</h3>
+  <div class="ref-demo">
+    <div class="ink-row"><span class="ink-tok">--ink-900</span><span style="color:var(--ink-900);font-size:15px;font-weight:700">Título del topbar</span></div>
+    <div class="ink-row"><span class="ink-tok">--ink-800</span><span style="color:var(--ink-800);font-size:14px">Énfasis en texto secundario</span></div>
+    <div class="ink-row"><span class="ink-tok">--ink-700</span><span style="color:var(--ink-700);font-size:13.5px">Label de sección colapsable</span></div>
+    <div class="ink-row"><span class="ink-tok">--ink-600</span><span style="color:var(--ink-600);font-size:13.5px">Cuerpo secundario de lectura</span></div>
+    <div class="ink-row"><span class="ink-tok">--ink-500</span><span style="color:var(--ink-500);font-size:13px">Metadatos, fecha y hora</span></div>
+    <div class="ink-row"><span class="ink-tok">--ink-400</span><span style="color:var(--ink-400);font-size:12px">Labels, encabezados de tabla, hints</span></div>
+    <div class="ink-row"><span class="ink-tok">--ink-300</span><span style="color:var(--ink-300);font-size:12px">Iconos decorativos</span></div>
+    <div class="ink-row"><span class="ink-tok">--ink-200</span><span style="color:var(--ink-200);font-size:11px">Timestamps, texto mínimo</span></div>
+    <p class="ref-note">⚠️ En tema claro <code>--ink-400</code> (3.40:1) y <code>--ink-200</code> (2.32:1) no alcanzan AA. Ver §8 del styleguide.</p>
+  </div>
+
+  <h3 class="ref-h3">Semánticos — siempre en pares bg/fg</h3>
+  <div class="sw-grid">
+    <div class="sw"><div class="sw-chip d-flex align-items-center justify-content-center" style="background:var(--ok-bg);color:var(--ok-fg);font-weight:600;font-size:12px">Operativo</div>
+      <div class="sw-meta"><div class="sw-name">--ok-bg / --ok-fg</div></div></div>
+    <div class="sw"><div class="sw-chip d-flex align-items-center justify-content-center" style="background:var(--warn-bg);color:var(--warn-fg);font-weight:600;font-size:12px">Stock bajo</div>
+      <div class="sw-meta"><div class="sw-name">--warn-bg / --warn-fg</div></div></div>
+    <div class="sw"><div class="sw-chip d-flex align-items-center justify-content-center" style="background:var(--danger-bg);color:var(--danger-fg);font-weight:600;font-size:12px">En reparación</div>
+      <div class="sw-meta"><div class="sw-name">--danger-bg / --danger-fg</div></div></div>
+    <div class="sw"><div class="sw-chip d-flex align-items-center justify-content-center" style="background:var(--chip-bg);color:var(--chip-fg);font-weight:600;font-size:12px">En préstamo</div>
+      <div class="sw-meta"><div class="sw-name">--chip-bg / --chip-fg</div></div></div>
+    <div class="sw"><div class="sw-chip d-flex align-items-center justify-content-center" style="background:var(--neutral-bg);color:var(--neutral-fg);font-weight:600;font-size:12px">Sin estado</div>
+      <div class="sw-meta"><div class="sw-name">--neutral-bg / --neutral-fg</div></div></div>
+    <div class="sw"><div class="sw-chip" style="background:var(--photo-ph)"></div>
+      <div class="sw-meta"><div class="sw-name">--photo-ph</div><div class="sw-val">placeholder de foto</div></div></div>
+  </div>
+
+  <!-- ════════════════════════════════════ TIPOGRAFÍA ═══════════════════════ -->
+  <h2 class="ref-h2">Tipografía</h2>
+  <p class="ref-lead">
+    DM Sans 400/500/600/700. El cuerpo es <strong>13.5px</strong> — densidad alta,
+    es una herramienta de gestión. Todo uppercase lleva <code>letter-spacing</code>.
+  </p>
+  <div class="ref-demo">
+    <div class="type-row"><span class="type-tok">--fs-4xl · 26 / 700</span><span style="font-size:26px;font-weight:700;color:var(--brand-ink)">1.248</span></div>
+    <div class="type-row"><span class="type-tok">--fs-3xl · 24 / 700</span><span style="font-size:24px;font-weight:700;color:var(--ink-900)">Inventario</span></div>
+    <div class="type-row"><span class="type-tok">--fs-2xl · 20 / 700</span><span style="font-size:20px;font-weight:700;color:var(--ink-900)">GLTEC</span></div>
+    <div class="type-row"><span class="type-tok">--fs-xl · 16 / 600</span><span style="font-size:16px;font-weight:600;color:var(--ink-800)">Últimos movimientos</span></div>
+    <div class="type-row"><span class="type-tok">--fs-lg · 14 / 400</span><span style="font-size:14px;color:var(--ink-700)">Texto de input y de botón</span></div>
+    <div class="type-row"><span class="type-tok">--fs-base · 13.5 / 400</span><span style="font-size:13.5px;color:var(--ink-700)">Cuerpo — celda de tabla, texto de lectura</span></div>
+    <div class="type-row"><span class="type-tok">--fs-md · 13 / 600</span><span style="font-size:13px;font-weight:600;color:var(--ink-700)">Label de formulario</span></div>
+    <div class="type-row"><span class="type-tok">--fs-sm · 12 / 500</span><span style="font-size:12px;font-weight:500;color:var(--ink-400)">Total de Ítems</span></div>
+    <div class="type-row"><span class="type-tok">--fs-xs · 11.5 / 600 caps</span><span style="font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--ink-400)">Ubicación</span></div>
+    <div class="type-row"><span class="type-tok">--fs-2xs · 11 / 600 caps</span><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-400)">Número de serie</span></div>
+    <div class="type-row"><span class="type-tok">--fs-3xs · 10 / 600 caps</span><span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-400)">Menú principal</span></div>
+  </div>
+
+  <!-- ════════════════════════════════════ NAVEGACIÓN ═══════════════════════ -->
+  <h2 class="ref-h2">Navegación</h2>
+  <p class="ref-lead">
+    Sidebar fijo de 230px. Los textos usan <code>rgba(255,255,255,α)</code>, no la
+    escala <code>--ink-*</code>: van sobre el gradiente oscuro en ambos temas.
+    El estado activo lo decide el servidor comparando <code>request.endpoint</code>.
+  </p>
+  <div class="d-flex gap-4 flex-wrap align-items-start">
+    <div class="nav-demo">
+      <div class="logo">GLTEC</div>
+      <div class="logo-sub">Tecnología sin Límites</div>
+      <div class="barrio-badge" style="margin:0 16px 20px;padding:10px 14px;background:rgba(255,255,255,.08);border-radius:10px;color:rgba(255,255,255,.9);font-size:13px;font-weight:500">
+        <small style="display:block;color:rgba(255,255,255,.45);font-size:10px;font-weight:400;margin-bottom:2px;text-transform:uppercase;letter-spacing:.8px">Barrio actual</small>
+        Villa Alegre
+      </div>
+      <div class="nav-section">Menú Principal</div>
+      <a href="#" class="nav-item-custom active"><i class="bi bi-clipboard-data"></i> Inventario</a>
+      <a href="#" class="nav-item-custom"><i class="bi bi-search"></i> Búsqueda</a>
+      <div class="nav-section">Administración</div>
+      <a href="#" class="nav-item-custom"><i class="bi bi-people"></i> Usuarios</a>
+      <a href="#" class="nav-item-custom"><i class="bi bi-tags"></i> Catálogos</a>
+      <a href="#" class="nav-item-custom"><i class="bi bi-shield-check"></i> Auditoría</a>
+    </div>
+
+    <div class="flex-grow-1" style="min-width:320px">
+      <h3 class="ref-h3 mt-0">Topbar</h3>
+      <div class="ref-demo">
+        <div class="topbar" style="margin-bottom:0">
+          <div>
+            <nav class="breadcrumb-gltec">
+              <a href="#">Inventario</a> <span class="sep">›</span> <span class="current">Editar</span>
+            </nav>
+            <h1>Editar Ítem</h1>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <button type="button" class="theme-toggle"><i class="bi bi-moon-stars icon-light"></i><i class="bi bi-sun icon-dark"></i></button>
+            <span class="text-muted" style="font-size:13px">Ana Torres</span>
+            <div class="avatar">AN</div>
+          </div>
+        </div>
+        <p class="ref-note">Breadcrumb + <code>h1</code> a la izquierda; toggle, usuario y avatar a la derecha.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════ TOGGLE DE TEMA ══════════════════ -->
+  <h2 class="ref-h2">Toggle de tema</h2>
+  <p class="ref-lead">
+    Único control global de apariencia. Los dos iconos viven siempre en el DOM;
+    el CSS decide cuál se ve según <code>data-theme</code>. El JS sólo mueve el
+    atributo en <code>&lt;html&gt;</code> — nunca toca clases ni <code>innerHTML</code>.
+  </p>
+  <div class="ref-demo">
+    <div class="d-flex align-items-center gap-4 flex-wrap">
+      <div class="text-center">
+        <button type="button" class="theme-toggle" onclick="document.getElementById('theme-toggle').click()">
+          <i class="bi bi-moon-stars icon-light"></i><i class="bi bi-sun icon-dark"></i>
+        </button>
+        <div style="font-size:11px;color:var(--ink-400);margin-top:8px">reposo</div>
+      </div>
+      <div class="text-center">
+        <button type="button" class="theme-toggle" style="background:var(--surface-hover);color:var(--brand-ink);border-color:var(--accent)">
+          <i class="bi bi-moon-stars icon-light"></i><i class="bi bi-sun icon-dark"></i>
+        </button>
+        <div style="font-size:11px;color:var(--ink-400);margin-top:8px">hover (forzado)</div>
+      </div>
+      <div style="font-size:13px;color:var(--ink-600);max-width:44ch">
+        <strong>El icono muestra el destino, no el estado actual.</strong>
+        En claro ves una luna = "tocá para ir a oscuro"; en oscuro, un sol.
+        Cambiá el tema arriba y mirá cómo se invierten estos dos.
+      </div>
+    </div>
+    <p class="ref-note">
+      34×34px, <code>border-radius:50%</code>, borde <code>--border-2</code>, icono 15px <code>--ink-500</code>.
+      Deliberadamente más chico que el avatar (36px): es un control auxiliar.
+      Contraste del icono — claro 5.74:1 · oscuro 6.91:1, AA en ambos.
+    </p>
+  </div>
+  <div class="ref-demo">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <select class="form-select form-select-sm" style="max-width:210px;font-size:13px">
+        <option>Todos los barrios</option><option>Villa Alegre</option>
+      </select>
+      <button type="button" class="theme-toggle" onclick="document.getElementById('theme-toggle').click()">
+        <i class="bi bi-moon-stars icon-light"></i><i class="bi bi-sun icon-dark"></i>
+      </button>
+      <span class="text-muted" style="font-size:13px">Ana Torres</span>
+      <div class="avatar">AN</div>
+    </div>
+    <p class="ref-note">
+      Orden en el clúster derecho del topbar: selector de barrio (sólo admin) ·
+      <strong>toggle</strong> · nombre · avatar. Va antes del nombre para no separar
+      al usuario de su avatar. Este de acá funciona — hacé clic.
+    </p>
+  </div>
+
+  <!-- ════════════════════════════════════ BOTONES ══════════════════════════ -->
+  <h2 class="ref-h2">Botones</h2>
+  <p class="ref-lead">
+    Tres niveles. <strong>Uno solo primario por vista.</strong> Toda acción
+    destructiva es POST con token CSRF y <code>confirm()</code> — nunca un link.
+  </p>
+  <div class="ref-demo">
+    <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
+      <button class="btn btn-gltec"><i class="bi bi-check-lg"></i> Guardar Cambios</button>
+      <button class="btn btn-outline-secondary">Cancelar</button>
+      <button class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar</button>
+    </div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <button class="btn btn-sm btn-gltec"><i class="bi bi-plus-lg"></i> Nuevo Ítem</button>
+      <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-filetype-pdf"></i> Exportar PDF</button>
+      <div class="d-flex gap-1">
+        <button class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-outline-secondary" title="Ver detalle"><i class="bi bi-eye"></i></button>
+        <button class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></button>
+      </div>
+    </div>
+    <p class="ref-note">En tablas: siempre <code>.btn-sm</code>, sólo icono, con <code>title</code>, agrupados en <code>d-flex gap-1</code>.</p>
+  </div>
+
+  <h3 class="ref-h3">Paginación</h3>
+  <div class="ref-demo">
+    <div class="d-flex justify-content-center gap-1">
+      <a href="#" class="btn btn-sm btn-outline-secondary">‹</a>
+      <a href="#" class="btn btn-sm btn-outline-secondary">1</a>
+      <a href="#" class="btn btn-sm btn-gltec">2</a>
+      <a href="#" class="btn btn-sm btn-outline-secondary">3</a>
+      <span class="btn btn-sm disabled">…</span>
+      <a href="#" class="btn btn-sm btn-outline-secondary">12</a>
+      <a href="#" class="btn btn-sm btn-outline-secondary">›</a>
+    </div>
+    <p class="ref-note">La página actual usa <code>.btn-gltec</code>. Todos los filtros activos viajan en cada <code>url_for</code>.</p>
+  </div>
+
+  <!-- ════════════════════════════════════ BADGES ═══════════════════════════ -->
+  <h2 class="ref-h2">Badges y chips</h2>
+  <p class="ref-lead">
+    El mapeo estado → clase se resuelve en Jinja por coincidencia parcial sobre
+    <code>item.estado|lower</code>, con <code>.badge-default</code> como fallback.
+  </p>
+  <div class="ref-demo">
+    <div class="d-flex gap-2 flex-wrap mb-3">
+      <span class="badge-estado badge-operativo">Operativo</span>
+      <span class="badge-estado badge-stock-bajo">Stock bajo</span>
+      <span class="badge-estado badge-reparacion">En reparación</span>
+      <span class="badge-estado badge-prestamo">En préstamo</span>
+      <span class="badge-estado badge-fuera">Fuera de servicio</span>
+      <span class="badge-estado badge-revisar">Revisar</span>
+      <span class="badge-estado badge-default">Sin clasificar</span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap mb-3">
+      <span class="badge-estado nivel-alerta"><i class="bi bi-exclamation-triangle-fill me-1" style="font-size:10px"></i>Alerta</span>
+      <span class="badge-estado nivel-advertencia">Advertencia</span>
+      <span class="badge-estado nivel-info">Info</span>
+      <span class="badge-estado" style="background:var(--danger-bg-2);color:var(--danger-fg);border:1px solid var(--danger-border);border-radius:6px;padding:3px 10px;font-size:12px">Dado de baja</span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <span class="chip"><span class="cat-dot" style="background:#e74c3c;margin-right:0"></span>Cámaras <a href="#" class="chip-x">×</a></span>
+      <span class="chip"><i class="bi bi-geo-alt"></i> Depósito central <a href="#" class="chip-x">×</a></span>
+      <span class="chip"><i class="bi bi-search"></i> switch <a href="#" class="chip-x">×</a></span>
+      <span class="chip chip--soft"><i class="bi bi-houses"></i> Villa Alegre</span>
+      <a href="#" class="text-decoration-none" style="font-size:12px;color:var(--ink-400)">Limpiar todo</a>
+    </div>
+    <p class="ref-note">
+      <code>.badge-reparacion</code>/<code>.badge-fuera</code> y
+      <code>.badge-stock-bajo</code>/<code>.badge-revisar</code> son hoy alias visuales.
+      <code>.chip</code> es propuesta: en la app todavía son estilos inline.
+    </p>
+  </div>
+
+  <!-- ════════════════════════════════════ CARDS ════════════════════════════ -->
+  <h2 class="ref-h2">Cards</h2>
+  <h3 class="ref-h3">stat-card — KPI</h3>
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="stat-card">
+      <div class="stat-label">Total de Ítems</div><div class="stat-value">1.248</div>
+      <div class="text-muted" style="font-size:11.5px">en todas las categorías</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card">
+      <div class="stat-label">Cámaras</div><div class="stat-value">312</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card">
+      <div class="stat-label">Redes</div><div class="stat-value">184</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card">
+      <div class="stat-label">Mobiliario</div><div class="stat-value">97</div></div></div>
+  </div>
+
+  <h3 class="ref-h3">cat-card — tile de categoría (pasá el mouse)</h3>
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-sm-4 col-md-3 col-xl-2"><div class="cat-card">
+      <i class="bi bi-camera-video" style="font-size:24px;color:#e74c3c"></i>
+      <div class="mt-2" style="font-size:13px;font-weight:600;color:var(--brand-ink);line-height:1.3">Cámaras</div>
+      <div style="font-size:11.5px;color:var(--ink-400);margin-top:3px">312 ítems</div></div></div>
+    <div class="col-6 col-sm-4 col-md-3 col-xl-2"><div class="cat-card">
+      <i class="bi bi-hdd-network" style="font-size:24px;color:#2E86C1"></i>
+      <div class="mt-2" style="font-size:13px;font-weight:600;color:var(--brand-ink);line-height:1.3">Redes</div>
+      <div style="font-size:11.5px;color:var(--ink-400);margin-top:3px">184 ítems</div></div></div>
+    <div class="col-6 col-sm-4 col-md-3 col-xl-2"><div class="cat-card">
+      <i class="bi bi-lamp" style="font-size:24px;color:#f39c12"></i>
+      <div class="mt-2" style="font-size:13px;font-weight:600;color:var(--brand-ink);line-height:1.3">Iluminación</div>
+      <div style="font-size:11.5px;color:var(--ink-400);margin-top:3px">1 ítem</div></div></div>
+  </div>
+
+  <h3 class="ref-h3">card-custom + par label/valor</h3>
+  <div class="card-custom p-4 mb-3" style="max-width:420px">
+    <h6 class="mb-3 pb-2 border-bottom" style="color:var(--brand-ink)">Información General</h6>
+    <div class="mb-3">
+      <span class="badge rounded-pill px-3 py-2" style="background:var(--primary);color:#fff;font-size:14px;font-weight:700;letter-spacing:.5px">
+        <i class="bi bi-tag-fill me-1"></i>CAM-001</span>
+    </div>
+    <div class="mb-3"><div class="label-dato">Marca / Modelo</div><div>Hikvision DS-2CD1043G0</div></div>
+    <div class="mb-3"><div class="label-dato">Estado</div><div><span class="badge-estado badge-operativo">Operativo</span></div></div>
+    <div class="mb-0"><div class="label-dato">Cantidad</div><div>4</div></div>
+  </div>
+
+  <!-- ════════════════════════════════════ TABLAS ═══════════════════════════ -->
+  <h2 class="ref-h2">Tablas</h2>
+  <p class="ref-lead">
+    Estructura idéntica en las seis vistas de listado: cabecera con acción,
+    <code>.table-responsive</code> y paginación, todo dentro de
+    <code>.table-container</code> (cuyo <code>overflow:hidden</code> recorta las esquinas del <code>thead</code>).
+  </p>
+  <div class="table-container mb-2">
+    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+      <h5 class="mb-0" style="font-size:16px">Últimos movimientos</h5>
+      <button class="btn btn-sm btn-gltec"><i class="bi bi-plus-lg"></i> Nuevo Ítem</button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-borderless mb-0">
+        <thead>
+          <tr><th>Ítem</th><th>Categoría</th><th>Ubicación</th><th>Estado</th><th>Cantidad</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Cámara domo exterior</strong><br><span class="text-muted" style="font-size:11.5px">Hikvision DS-2CD1043G0</span></td>
+            <td><span class="cat-dot" style="background:#e74c3c"></span>Cámaras</td>
+            <td>Portón principal</td>
+            <td><span class="badge-estado badge-operativo">Operativo</span></td>
+            <td>4</td>
+            <td><div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Ver detalle"><i class="bi bi-eye"></i></button></div></td>
+          </tr>
+          <tr class="fila-editada">
+            <td><strong>Switch 24 puertos</strong><br><span class="text-muted" style="font-size:11.5px">TP-Link TL-SG1024</span></td>
+            <td><span class="cat-dot" style="background:#2E86C1"></span>Redes</td>
+            <td>Rack SUM</td>
+            <td><span class="badge-estado badge-stock-bajo">Stock bajo</span></td>
+            <td>1</td>
+            <td><div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Ver detalle"><i class="bi bi-eye"></i></button></div></td>
+          </tr>
+          <tr>
+            <td><strong>Reflector LED 100W</strong></td>
+            <td><span class="cat-dot" style="background:#f39c12"></span>Iluminación</td>
+            <td>-</td>
+            <td><span class="badge-estado badge-reparacion">En reparación</span></td>
+            <td>2</td>
+            <td><div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-secondary" title="Ver detalle"><i class="bi bi-eye"></i></button></div></td>
+          </tr>
+          <tr class="audit-alerta">
+            <td><strong>Notebook Lenovo</strong><br><span class="text-muted" style="font-size:11.5px">fila con .audit-alerta</span></td>
+            <td><span class="cat-dot" style="background:#8e44ad"></span>Informática</td>
+            <td>Oficina</td>
+            <td><span class="badge-estado badge-fuera">Fuera de servicio</span></td>
+            <td>1</td>
+            <td><div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-secondary" title="Ver detalle"><i class="bi bi-eye"></i></button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="ref-note mb-4">
+    Fila 2 = <code>.fila-editada</code> (resaltado al volver de editar, con borde izquierdo <code>--accent</code>).
+    Fila 4 = <code>.audit-alerta</code> (evento crítico de auditoría). Pasá el mouse por la fila 1 o 3 para ver el hover.
+  </p>
+
+  <h3 class="ref-h3">Estado vacío</h3>
+  <div class="table-container">
+    <div class="empty-state">
+      <i class="bi bi-inbox"></i>
+      <p>No hay ítems cargados todavía.</p>
+      <button class="btn btn-gltec btn-sm mt-2">Cargar el primero</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════ FORMULARIOS ══════════════════════ -->
+  <h2 class="ref-h2">Formularios</h2>
+  <p class="ref-lead">
+    Controles de Bootstrap sin modificar; el único override es el color de foco
+    (<code>--accent</code> + halo). Hacé clic en un campo para verlo.
+    Los contenedores llevan <code>max-width</code> explícito: 500px barrio · 540px catálogo · 600px usuario · 800px ítem.
+  </p>
+  <div class="card-custom p-4" style="max-width:800px">
+    <div class="row g-3 mb-3">
+      <div class="col-md-8">
+        <label class="form-label label-campo">Nombre *</label>
+        <input type="text" class="form-control" value="Cámara domo exterior">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label label-campo">Código</label>
+        <input type="text" class="form-control" placeholder="Ej: CAM-001">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label label-campo">Categoría *</label>
+        <select class="form-select"><option>Cámaras</option><option>Redes</option></select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label label-campo">Área <span class="text-muted fw-normal">(opcional)</span></label>
+        <select class="form-select"><option>— General del barrio —</option></select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label label-campo">Ubicación <span class="text-muted fw-normal">(opcional)</span></label>
+        <select class="form-select"><option>— Sin especificar —</option></select>
+        <div class="form-text">Se gestionan en <a href="#">Catálogos</a>.</div>
+      </div>
+      <div class="col-12">
+        <label class="form-label label-campo">Descripción</label>
+        <textarea class="form-control" rows="2"></textarea>
+      </div>
+    </div>
+
+    <button type="button" class="section-toggle collapsed" data-bs-toggle="collapse" data-bs-target="#demo-tecnicos" aria-expanded="false">
+      <i class="bi bi-chevron-right toggle-icon"></i>
+      Datos técnicos y adjuntos
+      <span class="section-hint">Marca · Modelo · Serie · Foto · PDF · Notas</span>
+    </button>
+    <div class="collapse" id="demo-tecnicos">
+      <div class="row g-3 mt-1">
+        <div class="col-md-4"><label class="form-label label-campo">Marca</label><input type="text" class="form-control"></div>
+        <div class="col-md-4"><label class="form-label label-campo">Modelo</label><input type="text" class="form-control"></div>
+        <div class="col-md-4"><label class="form-label label-campo">Número de Serie</label><input type="text" class="form-control"></div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+      <button type="button" class="btn btn-gltec"><i class="bi bi-check-lg"></i> Guardar Cambios</button>
+      <button type="button" class="btn btn-outline-secondary">Cancelar</button>
+    </div>
+  </div>
+  <p class="ref-note mb-4">La flecha rota 90° al abrir: Bootstrap agrega <code>.collapsed</code> cuando está <em>cerrado</em>.</p>
+
+  <!-- ════════════════════════════════════ FEEDBACK ═════════════════════════ -->
+  <h2 class="ref-h2">Feedback</h2>
+  <p class="ref-lead">
+    Alerts nativos de Bootstrap. La categoría de Flask debe coincidir con el
+    sufijo (<code>success</code>, <code>danger</code>, <code>warning</code>, <code>info</code>).
+  </p>
+  <div class="alert alert-success alert-dismissible fade show" style="font-size:14px" role="alert">
+    Ítem creado correctamente.<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button></div>
+  <div class="alert alert-warning alert-dismissible fade show" style="font-size:14px" role="alert">
+    La imagen pesa más de 8 MB.<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button></div>
+  <div class="alert alert-danger alert-dismissible fade show" style="font-size:14px" role="alert">
+    Usuario o contraseña incorrectos.<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button></div>
+
+  <h3 class="ref-h3">Placeholder de foto</h3>
+  <div class="photo-placeholder" style="max-width:320px"><i class="bi bi-camera"></i></div>
+
+  <p class="ref-note" style="margin-top:56px;padding-top:20px;border-top:1px solid var(--border-2)">
+    Generado a partir de <code>app/templates/layouts/base.html</code>. Si cambiás un token
+    ahí, actualizá <code>tokens.css</code> y esta página. Documentación completa en <strong>STYLEGUIDE.md</strong>.
+  </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Mismo toggle que base.html
+  document.getElementById('theme-toggle')?.addEventListener('click', function () {
+    var root = document.documentElement;
+    var nuevo = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', nuevo);
+    root.setAttribute('data-bs-theme', nuevo);
+    try { localStorage.setItem('tema', nuevo); } catch (e) {}
+  });
+</script>
+</body>
+</html>

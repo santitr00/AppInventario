@@ -5,12 +5,12 @@
 {% block extra_css %}
 <style>
   .cat-card {
-    background: #fff; border-radius: 12px; padding: 16px 12px;
-    text-align: center; border: 1px solid #e9ecef; height: 100%;
+    background: var(--surface); border-radius: 12px; padding: 16px 12px;
+    text-align: center; border: 1px solid var(--border-2); height: 100%;
     transition: box-shadow .15s, border-color .15s;
   }
   .cat-card:hover {
-    box-shadow: 0 4px 12px rgba(27,79,114,.12);
+    box-shadow: var(--shadow-hover);
     border-color: var(--accent);
   }
 </style>
@@ -39,7 +39,7 @@
 <!-- Category grid -->
 {% if stats_por_cat %}
 <div class="mb-4">
-  <h6 class="mb-3" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#888">Explorar por categoría</h6>
+  <h6 class="mb-3" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-400)">Explorar por categoría</h6>
   <div class="row g-2">
     {% for s in stats_por_cat %}
     <div class="col-6 col-sm-4 col-md-3 col-xl-2">
@@ -50,8 +50,8 @@
           {% else %}
           <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:{{ s.categoria.color }};margin-bottom:4px"></span>
           {% endif %}
-          <div class="mt-2" style="font-size:13px;font-weight:600;color:#1B4F72;line-height:1.3">{{ s.categoria.nombre }}</div>
-          <div style="font-size:11.5px;color:#888;margin-top:3px">{{ s.count }} ítem{{ 's' if s.count != 1 }}</div>
+          <div class="mt-2" style="font-size:13px;font-weight:600;color:var(--brand-ink);line-height:1.3">{{ s.categoria.nombre }}</div>
+          <div style="font-size:11.5px;color:var(--ink-400);margin-top:3px">{{ s.count }} ítem{{ 's' if s.count != 1 }}</div>
         </div>
       </a>
     </div>

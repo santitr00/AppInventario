@@ -4,10 +4,10 @@
 
 {% block extra_css %}
 <style>
-  .audit-alerta  { background: #fff5f5 !important; }
-  .nivel-alerta  { background: #fde8e8; color: #c0392b; }
-  .nivel-advertencia { background: #fff8e1; color: #b8860b; }
-  .nivel-info    { background: #e8f0fe; color: #1B4F72; }
+  .audit-alerta  { background: var(--row-alerta) !important; }
+  .nivel-alerta  { background: var(--danger-bg); color: var(--danger-fg); }
+  .nivel-advertencia { background: var(--warn-bg); color: var(--warn-fg); }
+  .nivel-info    { background: var(--chip-bg); color: var(--chip-fg); }
   .detalle-cell  { max-width: 260px; }
   .detalle-cell span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 </style>
@@ -21,7 +21,7 @@
     <div class="row g-2 align-items-end">
 
       <div class="col-sm-6 col-md-3">
-        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">Acción</label>
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-400);font-weight:600;margin-bottom:4px">Acción</label>
         <select name="accion" class="form-select form-select-sm">
           <option value="">Todas</option>
           {% for val, label in acciones %}
@@ -31,7 +31,7 @@
       </div>
 
       <div class="col-sm-6 col-md-2">
-        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">Nivel</label>
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-400);font-weight:600;margin-bottom:4px">Nivel</label>
         <select name="nivel" class="form-select form-select-sm">
           <option value="">Todos</option>
           <option value="alerta"      {% if nivel_f == 'alerta' %}selected{% endif %}>Alerta</option>
@@ -41,22 +41,22 @@
       </div>
 
       <div class="col-sm-6 col-md-2">
-        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">Usuario</label>
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-400);font-weight:600;margin-bottom:4px">Usuario</label>
         <input type="text" name="actor_username" class="form-control form-control-sm" value="{{ actor_f }}" placeholder="Nombre…">
       </div>
 
       <div class="col-sm-6 col-md-2">
-        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">IP</label>
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-400);font-weight:600;margin-bottom:4px">IP</label>
         <input type="text" name="ip" class="form-control form-control-sm" value="{{ ip_f }}" placeholder="192.168…">
       </div>
 
       <div class="col-sm-6 col-md-1">
-        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">Desde</label>
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-400);font-weight:600;margin-bottom:4px">Desde</label>
         <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ fecha_desde_f }}">
       </div>
 
       <div class="col-sm-6 col-md-1">
-        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#888;font-weight:600;margin-bottom:4px">Hasta</label>
+        <label class="form-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink-400);font-weight:600;margin-bottom:4px">Hasta</label>
         <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ fecha_hasta_f }}">
       </div>
 
@@ -74,9 +74,9 @@
 <!-- Filtros activos -->
 {% if accion_f or actor_f or ip_f or nivel_f or fecha_desde_f or fecha_hasta_f %}
 <div class="d-flex gap-2 flex-wrap mb-3 align-items-center">
-  <span style="font-size:12px;color:#888">Filtrando por:</span>
+  <span style="font-size:12px;color:var(--ink-400)">Filtrando por:</span>
   {% if accion_f %}
-  <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:12px;font-weight:600">
+  <span class="badge rounded-pill" style="background:var(--chip-bg);color:var(--chip-fg);font-size:12px;font-weight:600">
     {{ acciones_map.get(accion_f, accion_f) }}
   </span>
   {% endif %}
@@ -84,17 +84,17 @@
   <span class="badge-estado nivel-{{ nivel_f }}" style="font-size:12px">{{ nivel_f|capitalize }}</span>
   {% endif %}
   {% if actor_f %}
-  <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:12px;font-weight:600">
+  <span class="badge rounded-pill" style="background:var(--chip-bg);color:var(--chip-fg);font-size:12px;font-weight:600">
     <i class="bi bi-person" style="font-size:10px"></i> {{ actor_f }}
   </span>
   {% endif %}
   {% if ip_f %}
-  <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:12px;font-weight:600">
+  <span class="badge rounded-pill" style="background:var(--chip-bg);color:var(--chip-fg);font-size:12px;font-weight:600">
     <i class="bi bi-wifi" style="font-size:10px"></i> {{ ip_f }}
   </span>
   {% endif %}
   {% if fecha_desde_f or fecha_hasta_f %}
-  <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-size:12px;font-weight:600">
+  <span class="badge rounded-pill" style="background:var(--chip-bg);color:var(--chip-fg);font-size:12px;font-weight:600">
     <i class="bi bi-calendar3" style="font-size:10px"></i>
     {{ fecha_desde_f or '…' }} → {{ fecha_hasta_f or '…' }}
   </span>
@@ -136,7 +136,7 @@
       <tbody>
         {% for log in logs %}
         <tr {% if log.nivel == 'alerta' %}class="audit-alerta"{% endif %}>
-          <td style="white-space:nowrap;font-size:12.5px;color:#666">{{ log.timestamp|art }}</td>
+          <td style="white-space:nowrap;font-size:12.5px;color:var(--ink-500)">{{ log.timestamp|art }}</td>
           <td>
             <strong style="font-size:13px">{{ log.actor_username }}</strong>
             {% if log.actor_id %}
@@ -150,7 +150,7 @@
               {{ log.nivel|capitalize }}
             </span>
           </td>
-          <td style="font-size:12.5px;color:#555;white-space:nowrap">{{ log.ip or '—' }}</td>
+          <td style="font-size:12.5px;color:var(--ink-600);white-space:nowrap">{{ log.ip or '—' }}</td>
           <td style="font-size:12.5px">
             {% if log.target_label %}
             <span>
@@ -161,7 +161,7 @@
           </td>
           <td class="detalle-cell">
             {% if log.detalle %}
-            <span title="{{ log.detalle }}" style="font-size:12px;color:#555">{{ log.detalle }}</span>
+            <span title="{{ log.detalle }}" style="font-size:12px;color:var(--ink-600)">{{ log.detalle }}</span>
             {% else %}—{% endif %}
           </td>
         </tr>

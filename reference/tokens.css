@@ -1,0 +1,199 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   InventarioGLTEC — Design Tokens
+   ──────────────────────────────────────────────────────────────────────────
+   Fuente de verdad: app/templates/layouts/base.html (bloque <style>).
+   Este archivo replica esos tokens 1:1 para poder documentarlos, previsualizarlos
+   (ver reference/index.html) y eventualmente servirlos como CSS estático.
+
+   Contrato de temas
+   -----------------
+   El tema se aplica en <html> con DOS atributos, seteados por el script inline
+   de base.html antes del primer pintado (evita el flash de claro):
+
+       document.documentElement.setAttribute('data-theme',    'light' | 'dark');
+       document.documentElement.setAttribute('data-bs-theme', 'light' | 'dark');
+
+   - data-theme    → gobierna los tokens de este archivo.
+   - data-bs-theme → gobierna los componentes nativos de Bootstrap 5.3.
+   Ambos deben moverse juntos. Persistencia: localStorage['tema'].
+   Sin preferencia guardada → 'light'.
+
+   Regla de oro
+   ------------
+   Los tokens de MARCA (--primary, --accent y sus -600) NO cambian entre temas:
+   son rellenos sólidos sobre los que siempre va texto blanco.
+   Para usar azul como TEXTO sobre una superficie usá --brand-ink / --accent-ink,
+   que sí se aclaran en oscuro para mantener contraste legible.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ══ Tema claro (default) ══════════════════════════════════════════════════ */
+:root {
+  /* ── Layout ── */
+  --sidebar-w: 230px;
+
+  /* ── Marca — constante en ambos temas (fills: botones, avatar, focus) ── */
+  --primary:     #1B4F72;
+  --accent:      #2E86C1;
+  --primary-600: #154360;   /* hover */
+  --accent-600:  #2471a3;   /* hover */
+
+  /* ── Azul usado como TEXTO sobre superficie (se aclara en oscuro) ── */
+  --brand-ink:  #1B4F72;
+  --accent-ink: #2E86C1;
+
+  /* ── Superficies ── */
+  --bg:            #f0f2f5;   /* fondo de página */
+  --surface:       #fff;      /* cards, tablas, sidebar-off */
+  --surface-2:     #f8f9fb;   /* hover de fila, bloques embebidos */
+  --surface-3:     #fafafc;   /* thead */
+  --surface-hover: #eef2f7;   /* hover de controles */
+
+  /* ── Bordes ── */
+  --border:   #eee;      /* divisores suaves (thead, separadores) */
+  --border-2: #e9ecef;   /* bordes de card/control */
+  --border-3: #ddd;      /* bordes marcados (swatch de color) */
+
+  /* ── Sombras ── */
+  --shadow-card:  0 1px 3px rgba(0,0,0,.06);
+  --shadow-hover: 0 4px 12px rgba(27,79,114,.12);
+
+  /* ── Escala de tinta: 900 = más contraste, 200 = más tenue ── */
+  --ink-900: #1a1a2e;   /* títulos h1 */
+  --ink-800: #333;      /* énfasis en texto secundario */
+  --ink-700: #444;      /* label de sección colapsable */
+  --ink-600: #555;      /* cuerpo secundario */
+  --ink-500: #666;      /* metadatos */
+  --ink-400: #888;      /* labels, th, hints */
+  --ink-300: #999;      /* iconos decorativos */
+  --ink-200: #aaa;      /* timestamps, texto mínimo */
+
+  /* ── Chips / badges azules ── */
+  --chip-bg:   #e8f0fe;
+  --chip-fg:   #1B4F72;
+  --chip-bg-2: #eaf6fb;   /* variante más tenue (badge de barrio) */
+
+  /* ── Estados semánticos ── */
+  --ok-bg:      #e6f9ee;   --ok-fg:     #1a8a4a;
+  --warn-bg:    #fff8e1;   --warn-fg:   #b8860b;
+  --danger-bg:  #fde8e8;   --danger-fg: #c0392b;
+  --danger-bg-2:#fdecea;   --danger-border: #f5c6cb;
+  --neutral-bg: #f0f2f5;   --neutral-fg: #555;
+
+  /* ── Resaltados de fila ── */
+  --row-alerta:  #fff5f5;   /* auditoría nivel=alerta */
+  --row-editada: #fff8e1;   /* fila recién editada, al volver a la búsqueda */
+
+  /* ── Sidebar (gradiente 180°) ── */
+  --sidebar-1: #1B4F72;
+  --sidebar-2: #154360;
+
+  /* ── Placeholder de foto ── */
+  --photo-ph: linear-gradient(135deg,#e8f0fe,#d6eaf8);
+}
+
+/* ══ Tema oscuro ═══════════════════════════════════════════════════════════
+   Sólo se redefine lo que cambia. --sidebar-w, --primary, --accent,
+   --primary-600 y --accent-600 se heredan del bloque claro a propósito.      */
+:root[data-theme="dark"] {
+  --brand-ink:  #7fbeea;
+  --accent-ink: #6cb6e8;
+
+  --bg:            #0d1117;
+  --surface:       #161b22;
+  --surface-2:     #1b222b;
+  --surface-3:     #1a212a;
+  --surface-hover: #232b35;
+
+  --border:   #21262d;
+  --border-2: #262d36;
+  --border-3: #30363d;
+
+  --shadow-card:  0 1px 3px rgba(0,0,0,.4);
+  --shadow-hover: 0 4px 12px rgba(0,0,0,.55);
+
+  --ink-900: #e6edf3;
+  --ink-800: #d7dee6;
+  --ink-700: #c9d1d9;
+  --ink-600: #b3bdc7;
+  --ink-500: #9aa5b1;
+  --ink-400: #8b949e;
+  --ink-300: #808a95;
+  --ink-200: #6e7681;
+
+  --chip-bg:   rgba(46,134,193,.20);
+  --chip-fg:   #9ecdf0;
+  --chip-bg-2: rgba(46,134,193,.16);
+
+  --ok-bg:      rgba(46,160,67,.16);    --ok-fg:     #56d364;
+  --warn-bg:    rgba(210,153,34,.16);   --warn-fg:   #e3b341;
+  --danger-bg:  rgba(218,54,51,.16);    --danger-fg: #f97171;
+  --danger-bg-2:rgba(218,54,51,.14);    --danger-border: rgba(218,54,51,.35);
+  --neutral-bg: rgba(255,255,255,.08);  --neutral-fg: #c9d1d9;
+
+  --row-alerta:  rgba(218,54,51,.10);
+  --row-editada: rgba(210,153,34,.12);
+
+  --sidebar-1: #13324a;
+  --sidebar-2: #0e2536;
+
+  --photo-ph: linear-gradient(135deg,#1c3448,#16293a);
+
+  /* ── Puente hacia Bootstrap ──────────────────────────────────────────────
+     Alinea los componentes propios de Bootstrap (inputs, dropdowns, alerts,
+     botones outline) con esta paleta. SOLO aplica en oscuro: en claro se usan
+     los valores de fábrica de Bootstrap, intactos.
+     Esto es lo que hace que `data-bs-theme="dark"` no baste por sí solo —
+     sin este bloque los controles quedan con los grises genéricos de Bootstrap
+     en vez de con los de la app. */
+  --bs-body-bg:         var(--bg);
+  --bs-body-color:      var(--ink-700);
+  --bs-emphasis-color:  var(--ink-900);
+  --bs-secondary-color: var(--ink-400);
+  --bs-border-color:    var(--border-3);
+  --bs-tertiary-bg:     var(--surface-2);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TIPOGRAFÍA — tokens propuestos
+   ──────────────────────────────────────────────────────────────────────────
+   ⚠️ Esta sección NO existe hoy en base.html: los tamaños viven hardcodeados
+   en `style="font-size:13.5px"` por toda la app. Los valores de abajo son la
+   escala REAL observada, normalizada en tokens. Adoptarlos es opt-in.
+   Ver "Tipografía" y "Deuda de diseño" en STYLEGUIDE.md.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Familia — DM Sans en toda la app autenticada */
+  --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Escala (px, tal como se usa hoy) */
+  --fs-3xs: 10px;     /* nav-section, logo-sub, badge de barrio */
+  --fs-2xs: 11px;     /* labels de campo en vista detalle */
+  --fs-xs:  11.5px;   /* th de tabla, texto auxiliar bajo un dato */
+  --fs-sm:  12px;     /* chips, hints, links de filtro */
+  --fs-md:  13px;     /* labels de formulario, nav-item, meta del topbar */
+  --fs-base:13.5px;   /* CUERPO — celdas de tabla, texto de lectura */
+  --fs-lg:  14px;     /* inputs, botones, alerts */
+  --fs-xl:  16px;     /* h5 de encabezado de card/tabla */
+  --fs-2xl: 20px;     /* logo del sidebar */
+  --fs-3xl: 24px;     /* h1 del topbar */
+  --fs-4xl: 26px;     /* stat-value */
+
+  /* Pesos */
+  --fw-normal:   400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* Tracking — el uppercase SIEMPRE lleva letter-spacing */
+  --ls-caps-sm: .6px;   /* labels uppercase de 11px */
+  --ls-caps-md: .8px;   /* th de tabla */
+  --ls-caps-lg: 1.2px;  /* nav-section del sidebar */
+
+  /* Radios — inventario de los valores en uso */
+  --radius-sm:   6px;   /* badge cuadrado (estado "dado de baja") */
+  --radius-md:   8px;   /* preview de imagen, alert */
+  --radius-lg:   10px;  /* barrio-badge, section-toggle */
+  --radius-xl:   12px;  /* stat-card, cat-card */
+  --radius-2xl:  14px;  /* card-custom, table-container */
+  --radius-pill: 20px;  /* badge-estado */
+}

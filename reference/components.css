@@ -1,0 +1,361 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   InventarioGLTEC — Componentes
+   ──────────────────────────────────────────────────────────────────────────
+   Depende de: reference/tokens.css  +  Bootstrap 5.3.3  +  Bootstrap Icons 1.11.3
+   La app NO reemplaza Bootstrap: lo extiende. `.btn-gltec` es un skin sobre
+   `.btn`; `.table-container` envuelve una `.table.table-borderless`.
+
+   Cada bloque está marcado con su origen:
+     [BASE]     existe verbatim en app/templates/layouts/base.html
+     [LOCAL]    existe hoy en el {% block extra_css %} de una sola plantilla
+     [PROPUESTO] no existe como clase: hoy son estilos inline repetidos.
+                 Incluido acá para poder citarlo desde el styleguide.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   1. BASE
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [BASE] Reset tipográfico global. Nota: el selector universal `*` es
+   deliberadamente agresivo — pisa la familia de TODO, incluidos los iconos.
+   Bootstrap Icons sobrevive porque usa ::before con su propia font-family. */
+* { font-family: 'DM Sans', sans-serif; }
+body { background: var(--bg); }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2. NAVEGACIÓN — Sidebar
+   ──────────────────────────────────────────────────────────────────────────
+   Fijo a la izquierda, ancho --sidebar-w (230px). Bajo 768px sale de pantalla
+   y se muestra con .show (toggle manual, sin JS de Bootstrap).
+   Los textos del sidebar NO usan la escala --ink-*: van sobre el gradiente
+   oscuro, así que usan rgba(255,255,255,α) fijo en ambos temas.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [BASE] */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: linear-gradient(180deg, var(--sidebar-1) 0%, var(--sidebar-2) 100%);
+  padding: 24px 0; overflow-y: auto; z-index: 1000;
+  transition: transform .3s;
+}
+.sidebar .logo     { padding: 0 20px; font-size: 20px; font-weight: 700; color: #fff; }
+.sidebar .logo-sub { padding: 0 20px; font-size: 11px; color: rgba(255,255,255,.5); margin-bottom: 24px; }
+
+/* Contexto activo: rol (admin) o barrio (usuario de barrio) */
+.sidebar .barrio-badge {
+  margin: 0 16px 20px; padding: 10px 14px;
+  background: rgba(255,255,255,.08); border-radius: 10px;
+  color: rgba(255,255,255,.9); font-size: 13px; font-weight: 500;
+}
+.sidebar .barrio-badge small {
+  display: block; color: rgba(255,255,255,.45); font-size: 10px; font-weight: 400;
+  margin-bottom: 2px; text-transform: uppercase; letter-spacing: .8px;
+}
+
+/* Encabezado de grupo de links */
+.nav-section {
+  padding: 16px 20px 6px; font-size: 10px; text-transform: uppercase;
+  letter-spacing: 1.2px; color: rgba(255,255,255,.3); font-weight: 600;
+}
+
+/* Link de navegación. El estado activo lo decide el servidor comparando
+   request.endpoint, no JS. */
+.nav-item-custom {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; color: rgba(255,255,255,.6);
+  font-size: 13.5px; font-weight: 500; text-decoration: none;
+  transition: all .15s;
+}
+.nav-item-custom:hover  { background: rgba(255,255,255,.06); color: rgba(255,255,255,.9); }
+.nav-item-custom.active { background: rgba(255,255,255,.1); color: #fff; border-left: 3px solid #85C1E9; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   3. LAYOUT — Main y topbar
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [BASE] */
+.main-content { margin-left: var(--sidebar-w); padding: 24px 28px; min-height: 100vh; }
+
+.topbar    { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.topbar h1 { font-size: 24px; color: var(--ink-900); font-weight: 700; margin: 0; }
+
+/* Iniciales del usuario. Único lugar (con .btn-gltec) donde el gradiente de
+   marca se usa como relleno. */
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600;
+}
+
+/* [PROPUESTO] Breadcrumb. Hoy es <nav style="font-size:13px"> + spans inline
+   en form_item / detalle_item / form_catalogo. Separador literal: › */
+.breadcrumb-gltec              { font-size: 13px; margin-bottom: 4px; }
+.breadcrumb-gltec a            { color: var(--accent-ink); text-decoration: none; }
+.breadcrumb-gltec .sep,
+.breadcrumb-gltec .current     { color: var(--ink-400); }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4. TOGGLE DE TEMA
+   ──────────────────────────────────────────────────────────────────────────
+   Único control global de apariencia. Botón circular de 34px con DOS iconos
+   que viven siempre en el DOM; el CSS decide cuál se ve según data-theme.
+   El JS nunca toca clases ni innerHTML: sólo mueve el atributo en <html>.
+
+   El icono indica el DESTINO, no el estado actual: en claro se ve una luna
+   ("tocá para ir a oscuro"), en oscuro un sol.
+
+   Ojo con los nombres: .icon-light es el icono que se ve EN TEMA CLARO
+   (la luna), no "el icono claro". Ídem .icon-dark (el sol).
+
+   Va en el clúster derecho del topbar, antes del nombre de usuario, para no
+   separar al usuario de su avatar. 34px es deliberadamente menor que los 36px
+   del avatar: es un control auxiliar.
+
+   Ver STYLEGUIDE.md §6.2 para anatomía completa, contraste y pendientes de a11y.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [BASE] */
+.theme-toggle {
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-2); border-radius: 50%;
+  background: var(--surface); color: var(--ink-500);
+  font-size: 15px; cursor: pointer; padding: 0;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.theme-toggle:hover { background: var(--surface-hover); color: var(--brand-ink); border-color: var(--accent); }
+
+.theme-toggle .icon-dark { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-dark  { display: inline-block; }
+:root[data-theme="dark"] .theme-toggle .icon-light { display: none; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5. SUPERFICIES — Cards
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [BASE] KPI. Se usa en grillas de 4 (col-6 col-md-3). */
+.stat-card {
+  background: var(--surface); border-radius: 12px; padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+}
+.stat-card .stat-label { font-size: 12px; color: var(--ink-400); font-weight: 500; margin-bottom: 4px; }
+.stat-card .stat-value { font-size: 26px; font-weight: 700; color: var(--brand-ink); }
+
+/* [BASE] Contenedor genérico. Se combina con utilidades de padding de
+   Bootstrap: `.card-custom.p-4`. `border: none` pisa a `.card` de Bootstrap. */
+.card-custom {
+  background: var(--surface); border-radius: 14px;
+  box-shadow: var(--shadow-card); border: none;
+}
+
+/* [LOCAL: inventory/index.html] Tile clickeable de categoría. */
+.cat-card {
+  background: var(--surface); border-radius: 12px; padding: 16px 12px;
+  text-align: center; border: 1px solid var(--border-2); height: 100%;
+  transition: box-shadow .15s, border-color .15s;
+}
+.cat-card:hover { box-shadow: var(--shadow-hover); border-color: var(--accent); }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6. TABLAS
+   ──────────────────────────────────────────────────────────────────────────
+   Estructura canónica:
+     .table-container
+       ├─ .d-flex.justify-content-between.align-items-center.p-3.border-bottom  ← cabecera
+       ├─ .table-responsive > table.table.table-borderless.mb-0
+       └─ .d-flex.justify-content-center.gap-1.p-3                              ← paginación
+   `overflow:hidden` en el contenedor recorta las esquinas del thead.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [BASE] */
+.table-container {
+  background: var(--surface); border-radius: 14px;
+  box-shadow: var(--shadow-card); overflow: hidden;
+}
+/* Bootstrap pinta cada celda con --bs-table-bg (por defecto el fondo del body).
+   Lo atamos a --surface: en claro resuelve a #fff, idéntico a lo que ya hacía;
+   en oscuro evita que las celdas queden más claras que la tarjeta que las
+   contiene. Es un override local, no un token global. */
+.table-container table { margin-bottom: 0; --bs-table-bg: var(--surface); }
+
+.table-container th {
+  font-size: 11.5px; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--ink-400); font-weight: 600;
+  background: var(--surface-3); border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+}
+.table-container td { padding: 14px 20px; font-size: 13.5px; vertical-align: middle; }
+.table-container tbody tr:hover { background: var(--surface-2); }
+
+/* [LOCAL: search/buscar.html] Fila recién editada, al volver a la búsqueda
+   filtrada. Se acompaña de scrollIntoView({block:'center'}). */
+.fila-editada td             { background: var(--row-editada); }
+.fila-editada td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
+/* [LOCAL: admin/auditoria.html] Fila de evento crítico. */
+.audit-alerta { background: var(--row-alerta) !important; }
+
+/* [LOCAL: admin/auditoria.html] Celda de detalle con truncado por elipsis;
+   el texto completo va en title=. */
+.detalle-cell       { max-width: 260px; }
+.detalle-cell span  { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7. BADGES, CHIPS Y PUNTOS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [BASE] Píldora de estado. El mapeo estado→clase se hace en Jinja con
+   coincidencia parcial sobre `item.estado|lower` (ver STYLEGUIDE.md §Badges). */
+.badge-estado { padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
+
+.badge-operativo  { background: var(--ok-bg);      color: var(--ok-fg); }
+.badge-stock-bajo { background: var(--warn-bg);    color: var(--warn-fg); }
+.badge-reparacion { background: var(--danger-bg);  color: var(--danger-fg); }
+.badge-prestamo   { background: var(--chip-bg);    color: var(--chip-fg); }
+.badge-fuera      { background: var(--danger-bg);  color: var(--danger-fg); }
+.badge-revisar    { background: var(--warn-bg);    color: var(--warn-fg); }
+.badge-default    { background: var(--neutral-bg); color: var(--neutral-fg); }
+
+/* [LOCAL: admin/auditoria.html] Niveles de auditoría. Reutilizan .badge-estado
+   como base — mismo patrón bg/fg semántico. */
+.nivel-alerta      { background: var(--danger-bg); color: var(--danger-fg); }
+.nivel-advertencia { background: var(--warn-bg);   color: var(--warn-fg); }
+.nivel-info        { background: var(--chip-bg);   color: var(--chip-fg); }
+
+/* [BASE] Punto de color de categoría. El color viene de la DB (categoria.color),
+   siempre por style inline — es dato, no token. */
+.cat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+/* [PROPUESTO] Chip de filtro activo. Hoy repetido 10 veces como
+   `<span class="badge rounded-pill" style="background:var(--chip-bg);…">`
+   en buscar.html y auditoria.html. */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 20px;
+  background: var(--chip-bg); color: var(--chip-fg);
+  font-size: 12px; font-weight: 600;
+}
+.chip--soft   { background: var(--chip-bg-2); font-size: 10px; }
+.chip .chip-x { color: var(--chip-fg); opacity: .6; text-decoration: none; }
+.chip .chip-x:hover { opacity: 1; }
+.chip i       { font-size: 10px; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8. BOTONES
+   ──────────────────────────────────────────────────────────────────────────
+   Jerarquía real de la app:
+     primario     → .btn.btn-gltec            (1 por vista: guardar, buscar, crear)
+     secundario   → .btn.btn-outline-secondary (cancelar, iconos de fila, paginación)
+     destructivo  → .btn.btn-outline-danger    (eliminar; siempre con confirm())
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [BASE] */
+.btn-gltec {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff; border: none; font-weight: 600;
+}
+.btn-gltec:hover {
+  background: linear-gradient(135deg, var(--primary-600), var(--accent-600));
+  color: #fff;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   9. FORMULARIOS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [BASE] Único override sobre los controles de Bootstrap: el foco pasa de
+   azul-Bootstrap al azul de marca. Todo lo demás (borde, radio, alto) es
+   Bootstrap de fábrica. */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 .2rem rgba(46,134,193,.15);
+}
+
+/* [LOCAL: inventory/form_item.html] Encabezado de sección colapsable
+   (Bootstrap collapse). La flecha rota 90° cuando la sección está abierta:
+   Bootstrap agrega .collapsed al botón cuando está CERRADO. */
+.section-toggle {
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--ink-700);
+  font-size: 13.5px; font-weight: 600;
+  text-align: left; width: 100%; cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  transition: background .15s, border-color .15s;
+}
+.section-toggle:hover { background: var(--surface-hover); border-color: var(--accent); }
+.section-toggle .toggle-icon { transition: transform .2s; color: var(--accent); }
+.section-toggle:not(.collapsed) .toggle-icon { transform: rotate(90deg); }
+.section-hint { font-size: 11.5px; color: var(--ink-200); font-weight: 400; margin-left: auto; }
+
+/* [PROPUESTO] Label de campo. Hoy:
+   `<label class="form-label fw-semibold" style="font-size:13px">` (~25 veces). */
+.label-campo { font-size: 13px; font-weight: 600; }
+
+/* [PROPUESTO] Label uppercase de dato en vista detalle / filtros. Hoy es un
+   bloque inline de 4 propiedades repetido ~12 veces en detalle_item.html
+   y auditoria.html. */
+.label-dato {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .6px;
+  font-weight: 600; color: var(--ink-400);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   10. ESTADOS VACÍOS
+   ──────────────────────────────────────────────────────────────────────────
+   [PROPUESTO] Patrón consistente en index / buscar / auditoria / catalogos:
+   icono 40px + frase + (opcional) CTA. Markup actual:
+     <div class="text-center text-muted py-5">
+       <i class="bi bi-inbox" style="font-size:40px"></i>
+       <p class="mt-2">…</p>
+     </div>
+   ══════════════════════════════════════════════════════════════════════════ */
+.empty-state         { text-align: center; color: var(--ink-400); padding: 3rem 1rem; }
+.empty-state i       { font-size: 40px; opacity: .3; }
+.empty-state p       { margin-top: .5rem; font-size: 14px; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   11. MEDIA — Placeholder de foto
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [PROPUESTO] detalle_item.html, cuando el ítem no tiene foto cargada. */
+.photo-placeholder {
+  display: flex; align-items: center; justify-content: center;
+  height: 180px; border-radius: .375rem;
+  background: var(--photo-ph);
+  font-size: 40px; color: var(--brand-ink);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   12. RESPONSIVE
+   ──────────────────────────────────────────────────────────────────────────
+   Único breakpoint propio de la app: 768px. Todo lo demás usa la grilla de
+   Bootstrap (col-6 col-sm-4 col-md-3 col-xl-2).
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* [BASE] */
+.sidebar-toggle { display: none; }
+
+@media (max-width: 768px) {
+  .sidebar        { transform: translateX(-100%); }
+  .sidebar.show   { transform: translateX(0); }
+  .main-content   { margin-left: 0; }
+  .sidebar-toggle { display: block; }
+}

@@ -3,24 +3,149 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {# Aplica el tema guardado ANTES de pintar, para evitar el flash de claro #}
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('tema'); } catch (e) {}
+      if (t !== 'dark') t = 'light';           // sin preferencia → claro
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.setAttribute('data-bs-theme', t);
+    })();
+  </script>
   <title>{% block title %}Inventario{% endblock %} | GLTEC</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    /* ══ Tema claro (valores actuales de la app) ══ */
     :root {
+      --sidebar-w: 230px;
+
+      /* Marca — constante en ambos temas (fills: botones, avatar, focus) */
       --primary: #1B4F72;
       --accent: #2E86C1;
-      --sidebar-w: 230px;
+      --primary-600: #154360;   /* hover */
+      --accent-600: #2471a3;    /* hover */
+
+      /* Azul usado como TEXTO sobre superficie (se aclara en oscuro) */
+      --brand-ink: #1B4F72;
+      --accent-ink: #2E86C1;
+
+      /* Superficies */
+      --bg: #f0f2f5;
+      --surface: #fff;
+      --surface-2: #f8f9fb;
+      --surface-3: #fafafc;
+      --surface-hover: #eef2f7;
+
+      /* Bordes */
+      --border: #eee;
+      --border-2: #e9ecef;
+      --border-3: #ddd;
+
+      /* Sombras */
+      --shadow-card: 0 1px 3px rgba(0,0,0,.06);
+      --shadow-hover: 0 4px 12px rgba(27,79,114,.12);
+
+      /* Escala de tinta: 900 = más contraste, 200 = más tenue */
+      --ink-900: #1a1a2e;
+      --ink-800: #333;
+      --ink-700: #444;
+      --ink-600: #555;
+      --ink-500: #666;
+      --ink-400: #888;
+      --ink-300: #999;
+      --ink-200: #aaa;
+
+      /* Chips / badges azules */
+      --chip-bg: #e8f0fe;
+      --chip-fg: #1B4F72;
+      --chip-bg-2: #eaf6fb;
+
+      /* Estados */
+      --ok-bg: #e6f9ee;      --ok-fg: #1a8a4a;
+      --warn-bg: #fff8e1;    --warn-fg: #b8860b;
+      --danger-bg: #fde8e8;  --danger-fg: #c0392b;
+      --danger-bg-2: #fdecea; --danger-border: #f5c6cb;
+      --neutral-bg: #f0f2f5; --neutral-fg: #555;
+
+      /* Resaltados de fila */
+      --row-alerta: #fff5f5;
+      --row-editada: #fff8e1;
+
+      /* Sidebar */
+      --sidebar-1: #1B4F72;
+      --sidebar-2: #154360;
+
+      /* Placeholder de foto */
+      --photo-ph: linear-gradient(135deg,#e8f0fe,#d6eaf8);
     }
+
+    /* ══ Tema oscuro ══ */
+    :root[data-theme="dark"] {
+      --brand-ink: #7fbeea;
+      --accent-ink: #6cb6e8;
+
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-2: #1b222b;
+      --surface-3: #1a212a;
+      --surface-hover: #232b35;
+
+      --border: #21262d;
+      --border-2: #262d36;
+      --border-3: #30363d;
+
+      --shadow-card: 0 1px 3px rgba(0,0,0,.4);
+      --shadow-hover: 0 4px 12px rgba(0,0,0,.55);
+
+      --ink-900: #e6edf3;
+      --ink-800: #d7dee6;
+      --ink-700: #c9d1d9;
+      --ink-600: #b3bdc7;
+      --ink-500: #9aa5b1;
+      --ink-400: #8b949e;
+      --ink-300: #808a95;
+      --ink-200: #6e7681;
+
+      --chip-bg: rgba(46,134,193,.20);
+      --chip-fg: #9ecdf0;
+      --chip-bg-2: rgba(46,134,193,.16);
+
+      --ok-bg: rgba(46,160,67,.16);     --ok-fg: #56d364;
+      --warn-bg: rgba(210,153,34,.16);  --warn-fg: #e3b341;
+      --danger-bg: rgba(218,54,51,.16); --danger-fg: #f97171;
+      --danger-bg-2: rgba(218,54,51,.14); --danger-border: rgba(218,54,51,.35);
+      --neutral-bg: rgba(255,255,255,.08); --neutral-fg: #c9d1d9;
+
+      --row-alerta: rgba(218,54,51,.10);
+      --row-editada: rgba(210,153,34,.12);
+
+      --sidebar-1: #13324a;
+      --sidebar-2: #0e2536;
+
+      --photo-ph: linear-gradient(135deg,#1c3448,#16293a);
+
+      /* Alinea los componentes propios de Bootstrap (inputs, dropdowns,
+         alerts, botones outline) con esta paleta. Solo aplica en oscuro:
+         en claro se usan los valores de fábrica de Bootstrap, intactos. */
+      --bs-body-bg: var(--bg);
+      --bs-body-color: var(--ink-700);
+      --bs-emphasis-color: var(--ink-900);
+      --bs-secondary-color: var(--ink-400);
+      --bs-border-color: var(--border-3);
+      --bs-tertiary-bg: var(--surface-2);
+    }
+
     * { font-family: 'DM Sans', sans-serif; }
-    body { background: #f0f2f5; }
+    body { background: var(--bg); }
 
     /* ── Sidebar ── */
     .sidebar {
       position: fixed; top: 0; left: 0; bottom: 0;
       width: var(--sidebar-w);
-      background: linear-gradient(180deg, #1B4F72 0%, #154360 100%);
+      background: linear-gradient(180deg, var(--sidebar-1) 0%, var(--sidebar-2) 100%);
       padding: 24px 0; overflow-y: auto; z-index: 1000;
       transition: transform .3s;
     }
@@ -45,53 +170,83 @@
     /* ── Main ── */
     .main-content { margin-left: var(--sidebar-w); padding: 24px 28px; min-height: 100vh; }
     .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .topbar h1 { font-size: 24px; color: #1a1a2e; font-weight: 700; margin: 0; }
+    .topbar h1 { font-size: 24px; color: var(--ink-900); font-weight: 700; margin: 0; }
     .avatar {
       width: 36px; height: 36px; border-radius: 50%;
-      background: linear-gradient(135deg, #1B4F72, #2E86C1);
+      background: linear-gradient(135deg, var(--primary), var(--accent));
       color: #fff; display: flex; align-items: center; justify-content: center;
       font-size: 14px; font-weight: 600;
     }
 
+    /* ── Toggle de tema ── */
+    .theme-toggle {
+      width: 34px; height: 34px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border-2); border-radius: 50%;
+      background: var(--surface); color: var(--ink-500);
+      font-size: 15px; cursor: pointer; padding: 0;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .theme-toggle:hover { background: var(--surface-hover); color: var(--brand-ink); border-color: var(--accent); }
+    /* El icono visible depende del tema activo */
+    .theme-toggle .icon-dark { display: none; }
+    :root[data-theme="dark"] .theme-toggle .icon-dark { display: inline-block; }
+    :root[data-theme="dark"] .theme-toggle .icon-light { display: none; }
+
     /* ── Cards ── */
     .stat-card {
-      background: #fff; border-radius: 12px; padding: 18px 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      background: var(--surface); border-radius: 12px; padding: 18px 20px;
+      box-shadow: var(--shadow-card);
     }
-    .stat-card .stat-label { font-size: 12px; color: #888; font-weight: 500; margin-bottom: 4px; }
-    .stat-card .stat-value { font-size: 26px; font-weight: 700; color: var(--primary); }
+    .stat-card .stat-label { font-size: 12px; color: var(--ink-400); font-weight: 500; margin-bottom: 4px; }
+    .stat-card .stat-value { font-size: 26px; font-weight: 700; color: var(--brand-ink); }
 
     .card-custom {
-      background: #fff; border-radius: 14px;
-      box-shadow: 0 1px 3px rgba(0,0,0,.06); border: none;
+      background: var(--surface); border-radius: 14px;
+      box-shadow: var(--shadow-card); border: none;
     }
 
     /* ── Table ── */
-    .table-container { background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06); overflow: hidden; }
-    .table-container table { margin-bottom: 0; }
+    .table-container { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; }
+    /* Bootstrap pinta cada celda con --bs-table-bg (por defecto el fondo del
+       body). Lo atamos a --surface: en claro resuelve a #fff, idéntico a lo
+       que ya hacía; en oscuro evita que las celdas queden más claras que la
+       tarjeta que las contiene. */
+    .table-container table { margin-bottom: 0; --bs-table-bg: var(--surface); }
     .table-container th {
       font-size: 11.5px; text-transform: uppercase; letter-spacing: .8px;
-      color: #888; font-weight: 600; background: #fafafc; border-bottom: 1px solid #eee;
+      color: var(--ink-400); font-weight: 600; background: var(--surface-3); border-bottom: 1px solid var(--border);
       padding: 12px 20px;
     }
     .table-container td { padding: 14px 20px; font-size: 13.5px; vertical-align: middle; }
-    .table-container tbody tr:hover { background: #f8f9fb; }
+    .table-container tbody tr:hover { background: var(--surface-2); }
 
     /* ── Badges ── */
     .badge-estado { padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
-    .badge-operativo { background: #e6f9ee; color: #1a8a4a; }
-    .badge-stock-bajo { background: #fff8e1; color: #b8860b; }
-    .badge-reparacion { background: #fde8e8; color: #c0392b; }
-    .badge-prestamo { background: #e8f0fe; color: #1B4F72; }
-    .badge-fuera { background: #fde8e8; color: #c0392b; }
-    .badge-revisar { background: #fff8e1; color: #b8860b; }
-    .badge-default { background: #f0f2f5; color: #555; }
+    .badge-operativo { background: var(--ok-bg); color: var(--ok-fg); }
+    .badge-stock-bajo { background: var(--warn-bg); color: var(--warn-fg); }
+    .badge-reparacion { background: var(--danger-bg); color: var(--danger-fg); }
+    .badge-prestamo { background: var(--chip-bg); color: var(--chip-fg); }
+    .badge-fuera { background: var(--danger-bg); color: var(--danger-fg); }
+    .badge-revisar { background: var(--warn-bg); color: var(--warn-fg); }
+    .badge-default { background: var(--neutral-bg); color: var(--neutral-fg); }
 
     .cat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
 
     /* ── Buttons ── */
-    .btn-gltec { background: linear-gradient(135deg, #1B4F72, #2E86C1); color: #fff; border: none; font-weight: 600; }
-    .btn-gltec:hover { background: linear-gradient(135deg, #154360, #2471a3); color: #fff; }
+    .btn-gltec { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; border: none; font-weight: 600; }
+    .btn-gltec:hover { background: linear-gradient(135deg, var(--primary-600), var(--accent-600)); color: #fff; }
+
+    /* En oscuro el gris secundario de Bootstrap queda muy apagado sobre las
+       tarjetas; lo subimos para que "Cancelar", los botones de acción de las
+       tablas y la paginación se lean bien. Solo aplica en oscuro. */
+    :root[data-theme="dark"] .btn-outline-secondary {
+      --bs-btn-color: var(--ink-600);
+      --bs-btn-border-color: var(--border-3);
+      --bs-btn-hover-color: #fff;
+      --bs-btn-hover-bg: var(--surface-hover);
+      --bs-btn-hover-border-color: var(--ink-200);
+    }
 
     /* ── Mobile ── */
     .sidebar-toggle { display: none; }
@@ -183,6 +338,11 @@
           </select>
         </form>
         {% endif %}
+        <button type="button" class="theme-toggle" id="theme-toggle"
+                title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
+          <i class="bi bi-moon-stars icon-light"></i>
+          <i class="bi bi-sun icon-dark"></i>
+        </button>
         <span class="text-muted" style="font-size:13px">{{ current_user.nombre_completo or current_user.username }}</span>
         <div class="avatar">{{ (current_user.nombre_completo or current_user.username)[:2]|upper }}</div>
       </div>
@@ -204,6 +364,15 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('theme-toggle')?.addEventListener('click', function () {
+      var root = document.documentElement;
+      var nuevo = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', nuevo);
+      root.setAttribute('data-bs-theme', nuevo);
+      try { localStorage.setItem('tema', nuevo); } catch (e) {}
+    });
+  </script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

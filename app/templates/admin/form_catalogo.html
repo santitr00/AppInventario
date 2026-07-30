@@ -4,7 +4,7 @@
 
 {% block breadcrumb %}
 <nav style="font-size:13px" class="mb-1">
-  <a href="{{ url_for('admin.catalogos', seccion=seccion) }}" class="text-decoration-none" style="color:#2E86C1">{{ cfg.plural }}</a>
+  <a href="{{ url_for('admin.catalogos', seccion=seccion) }}" class="text-decoration-none" style="color:var(--accent-ink)">{{ cfg.plural }}</a>
   <span class="text-muted">›</span>
   <span class="text-muted">{% if fila %}Editar{% else %}Nueva{% endif %}</span>
 </nav>
@@ -38,7 +38,7 @@
 
       {% if fila %}
       <div class="col-12">
-        <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#f8f9fb">
+        <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:var(--surface-2)">
           <i class="bi {{ fila.icono }}" style="font-size:28px;color:{{ fila.color }}"></i>
           <div>
             <div style="font-weight:600;font-size:15px">{{ fila.nombre }}</div>

@@ -45,7 +45,7 @@ build/
 *.swo
 .DS_Store
 Thumbs.db
-
+ARQUITECTURA.md
 # Coverage / testing
 .coverage
 htmlcov/

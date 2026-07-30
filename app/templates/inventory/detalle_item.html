@@ -3,7 +3,7 @@
 
 {% block breadcrumb %}
 <nav style="font-size:13px" class="mb-1">
-  <a href="{{ url_for('inventory.index') }}" class="text-decoration-none" style="color:#2E86C1">Inventario</a>
+  <a href="{{ url_for('inventory.index') }}" class="text-decoration-none" style="color:var(--accent-ink)">Inventario</a>
   <span class="text-muted">›</span>
   {% if item.categoria %}
   <span class="text-muted">{{ item.categoria.nombre }}</span>
@@ -41,10 +41,10 @@
   <!-- Info general -->
   <div class="col-md-6">
     <div class="card-custom p-4">
-      <h6 class="mb-3 pb-2 border-bottom" style="color:#1B4F72">Información General</h6>
+      <h6 class="mb-3 pb-2 border-bottom" style="color:var(--brand-ink)">Información General</h6>
       {% if item.codigo %}
       <div class="mb-3">
-        <span class="badge rounded-pill px-3 py-2" style="background:#1B4F72;color:#fff;font-size:14px;font-weight:700;letter-spacing:.5px">
+        <span class="badge rounded-pill px-3 py-2" style="background:var(--primary);color:#fff;font-size:14px;font-weight:700;letter-spacing:.5px">
           <i class="bi bi-tag-fill me-1"></i>{{ item.codigo }}
         </span>
       </div>
@@ -57,7 +57,7 @@
         <div class="text-muted text-uppercase" style="font-size:11px;letter-spacing:.6px;font-weight:600">Categoría</div>
         <div>
           {% if item.categoria %}
-          <span class="badge rounded-pill" style="background:#e8f0fe;color:#1B4F72;font-weight:600">{{ item.categoria.nombre }}</span>
+          <span class="badge rounded-pill" style="background:var(--chip-bg);color:var(--chip-fg);font-weight:600">{{ item.categoria.nombre }}</span>
           {% endif %}
         </div>
       </div>
@@ -80,7 +80,7 @@
           {% if 'operat' in estado_lower %}
             <span class="badge-estado badge-operativo">{{ item.estado }}</span>
           {% elif 'baja' in estado_lower %}
-            <span class="badge-estado" style="background:#fdecea;color:#c0392b;border:1px solid #f5c6cb;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600">{{ item.estado }}</span>
+            <span class="badge-estado" style="background:var(--danger-bg-2);color:var(--danger-fg);border:1px solid var(--danger-border);border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600">{{ item.estado }}</span>
           {% elif 'bajo' in estado_lower %}
             <span class="badge-estado badge-stock-bajo">{{ item.estado }}</span>
           {% elif 'reparac' in estado_lower %}
@@ -106,11 +106,11 @@
   <!-- Foto + ubicación -->
   <div class="col-md-6">
     <div class="card-custom p-4">
-      <h6 class="mb-3 pb-2 border-bottom" style="color:#1B4F72">Foto del Ítem</h6>
+      <h6 class="mb-3 pb-2 border-bottom" style="color:var(--brand-ink)">Foto del Ítem</h6>
       {% if item.foto %}
       <img src="{{ url_for('static', filename='uploads/' + item.foto) }}" class="img-fluid rounded mb-3" style="max-height:200px;object-fit:cover;width:100%">
       {% else %}
-      <div class="d-flex align-items-center justify-content-center rounded mb-3" style="height:180px;background:linear-gradient(135deg,#e8f0fe,#d6eaf8);font-size:40px;color:#1B4F72">
+      <div class="d-flex align-items-center justify-content-center rounded mb-3" style="height:180px;background:var(--photo-ph);font-size:40px;color:var(--brand-ink)">
         <i class="bi bi-camera"></i>
       </div>
       {% endif %}
@@ -148,18 +148,18 @@
   <!-- Historial -->
   <div class="col-12">
     <div class="card-custom p-4">
-      <h6 class="mb-3 pb-2 border-bottom" style="color:#1B4F72">Historial de Cambios</h6>
+      <h6 class="mb-3 pb-2 border-bottom" style="color:var(--brand-ink)">Historial de Cambios</h6>
       {% if historial %}
       {% for h in historial %}
       <div class="d-flex gap-3 py-2 {% if not loop.last %}border-bottom{% endif %}" style="align-items:flex-start">
         <div class="rounded-circle flex-shrink-0 mt-1" style="width:8px;height:8px;background:{% if h.accion == 'alta' %}#2E86C1{% elif h.accion == 'edicion' %}#f39c12{% elif h.accion == 'baja' %}#c0392b{% elif h.accion == 'cambio_estado' %}#27ae60{% else %}#8e44ad{% endif %}"></div>
         <div>
-          <div style="font-size:13px;color:#555">
-            <strong style="color:#333">{{ h.accion|capitalize }}</strong>
+          <div style="font-size:13px;color:var(--ink-600)">
+            <strong style="color:var(--ink-800)">{{ h.accion|capitalize }}</strong>
             — {{ h.detalle or '' }}
             {% if h.user %}<span class="text-muted">por {{ h.user.nombre_completo or h.user.username }}</span>{% endif %}
           </div>
-          <div style="font-size:11px;color:#aaa">{{ h.created_at | art }}</div>
+          <div style="font-size:11px;color:var(--ink-200)">{{ h.created_at | art }}</div>
         </div>
       </div>
       {% endfor %}
